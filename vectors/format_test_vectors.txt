@@ -1,0 +1,11 @@
+# Function      fmt             arg1        arg2     ... arg20              gold
+fpr             "{} - {}"       "one"       "two"                           "one - two"
+fstr            "<20s"          "yadda"                                     "yadda               "
+fstr            ">20s"          "yadda"                                     "               yadda"
+freal           "~=+18.8f"      "3.14159"                                   "+~~~~~~~3.14159000"
+fproc           "{1} - {0}"     "one"       "two"                           "two - one"
+fpr             "naked string"                                              "naked string"
+ftime           "12.9f"         "1 us"                                      "1000 ns     "
+freal           ">8.20f"        "3.14159"                                   "3.14159000000000000000"
+fint            "~^20d"         "200"                                       "~~~~~~~~200~~~~~~~~~"
+fpr             "{1} - {0}"     "3.14159"   "200"                           "200 - 3.14159"
