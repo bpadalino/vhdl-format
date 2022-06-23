@@ -15,13 +15,13 @@ and `x` for hexadecimal.
 General usage is like this:
 
 ```
-write( output, f("{} and {} are both arguments", f(3.14159, ">8.20f"), f(200, "~^20d")) & CR & LF ) ;
+write( output, f("{1} and {0} are both arguments", f(3.14159, ">8.20f"), f(200, "~^20d")) & CR & LF ) ;
 ```
 
 The previous should create the string:
 
 ```
-~~~~~~~~200~~~~~~~~~ - 3.14159000000000000000
+~~~~~~~~200~~~~~~~~~ and 3.14159000000000000000 are both arguments
 ```
 
 VHDL-2008 is required.
