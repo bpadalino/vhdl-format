@@ -2,7 +2,7 @@ This is a proof of concept for formatting strings with VHDL.
 
 The format specifier follows Python's format strings for the most part.
 
-    `[fill][align][sign][width][.precision][class]`
+    [fill][align][sign][width][.precision][class]
 
 `align` can be one of `<`, `>`, `^`, `=`.
 
