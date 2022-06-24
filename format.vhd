@@ -63,8 +63,8 @@ package format is
     ---------------------------------------------------------------------------
     ---- TODO: Generic f() function which utilizes the type'image to get the string and just pass to fstr()?
     ---- Useful for custom enumerated types?
-    --function fgeneric
-    --    generic(type t; procedure get_line(x : t ; variable l : inout std.textio.line) is <>)
+    --function f
+    --    generic(type t; function to_string(x : t) return string is <>)
     --    parameter(value : t ; fmt : string := "s")
     --    return string ;
 
@@ -122,15 +122,13 @@ package body format is
     ---------------------------------------------------------------------------
     -- VHDL-2008 Generic Function
     ---------------------------------------------------------------------------
-    --function fgeneric
-    --    generic(type t; procedure get_line(x : t ; variable l : inout std.textio.line) is <>)
+    --function f
+    --    generic(type t; function to_string(x : t) return string is <>)
     --    parameter(value : t ; fmt : string := "s")
     --    return string
     --is
-    --    variable l : std.textio.line ;
     --begin
-    --    get_line(value, l) ;
-    --    return fstr(l.all, fmt) ;
+    --    return fstr(to_string(value), fmt) ;
     --end function ;
 
     function to_integer(val : string) return integer is

@@ -69,15 +69,13 @@ architecture arch of format_test is
     type state_t is (IDLE, CHECKING, FOO, BAR) ;
     signal state : state_t := CHECKING ;
 
-    -- Define the procedure to get a line from the custom state
-    procedure get_line(x : state_t ; variable l : inout std.textio.line) is
+    function to_string(x : state_t) return string is
     begin
-        -- simple 'image attribute
-        l := new string'(state_t'image(x)) ;
-    end procedure ;
+        return state_t'image(x) ;
+    end function ;
 
     -- VHDL-2008 required with generic subprograms
-    --function f is new fgeneric generic map (t => state_t) ;
+    --function f is new f generic map (t => state_t) ;
 
 begin
 
