@@ -31,6 +31,9 @@ package format is
     type class_t is (BINARY, CHAR, INT, FLOAT, OCTAL, STR, UINT, HEX) ;
 
     -- [fill][align][sign][width][.precision][class]
+    -- NOTE: # after sign might be good for prefixes (0b, 0o, 0x) and might be easy to implement.
+    -- NOTE: Grouping might be good, but python only limits to [,_] and doesn't allow for arbitrary
+    -- grouping size.  Could be arbitrary character like fill, and how many digits?  Sounds complicated, though.
     type fmt_spec_t is record
         fill        :   character ;
         align       :   align_t ;
