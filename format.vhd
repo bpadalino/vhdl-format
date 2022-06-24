@@ -140,6 +140,7 @@ package body format is
         variable idx : positive := 1 ;
         variable numstart : natural := 0 ;
         variable numstop : natural := 0 ;
+        variable precision_present : boolean := false ;
     begin
         assert fn'length > 0
             report "Format string must not be empty"
@@ -323,6 +324,7 @@ package body format is
                         when others =>
                             if numstart > 0 then
                                 rv.precision := to_integer(fn(numstart to numstop)) ;
+                                precision_present := true ;
                                 numstart := 0 ;
                                 numstop := 0 ;
                             else
@@ -341,7 +343,13 @@ package body format is
                         when 'd'|'D' =>
                             rv.class := INT ;
                         when 'f'|'F' =>
-                            rv.class := FLOAT ;
+                            if precision_present = true and rv.precision = 0 then
+                                -- Precision was specified, so change the class to int to cut off
+                                -- any decimal representation
+                                rv.class := INT ;
+                            else
+                                rv.class := FLOAT ;
+                            end if ;
                         when 'o'|'O' =>
                             rv.class := OCTAL ;
                         when 's'|'S' =>
@@ -547,15 +555,51 @@ package body format is
         return l.all ;
     end function ;
 
+    procedure add_sign(variable l : inout std.textio.line ; s : character ; fmt_fill : character ) is
+        variable idx : natural := 1 ;
+    begin
+        while l(idx) = fmt_fill loop
+            idx := idx + 1 ;
+        end loop ;
+        l(idx-1) := s ;
+    end procedure ;
+
     function f(value : integer ; fmt : string := "d") return string is
         variable fmt_spec : fmt_Spec_t := parse(fmt, INT) ;
         variable l : std.textio.line ;
+        variable temp : std.textio.line ;
         variable fillcount : natural ;
+        variable sign : character ;
     begin
         std.textio.write(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
         fill(l, fmt_spec, fillcount) ;
         if fmt_spec.align = CENTERED then
             shift(l, fillcount/2) ;
+        end if ;
+        if fmt_spec.sign = true then
+            if fmt_spec.width = 0 then
+                std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
+                l := temp ;
+            else
+                -- Has a specific size, so shift it over only if there isn't fill at the start
+                if l(1) /= fmt_spec.fill then
+                    shift(l, 1) ;
+                end if ;
+            end if ;
+            if fmt_spec.align = SIGN_EDGE or fmt_spec.width = 0 then
+                if value < 0 then
+                    l(1) := '-' ;
+                else
+                    l(1) := '+' ;
+                end if ;
+            else
+                if value < 0 then
+                    sign := '-' ;
+                else
+                    sign := '+' ;
+                end if ;
+                add_sign(l, sign, fmt_spec.fill) ;
+            end if ;
         end if ;
         --case fmt_spec.class is
         --    when BINARY =>
@@ -573,18 +617,10 @@ package body format is
         return l.all ;
     end function ;
 
-    procedure add_sign(variable l : inout std.textio.line ; s : character ; fmt_fill : character ) is
-        variable idx : natural := 1 ;
-    begin
-        while l(idx) = fmt_fill loop
-            idx := idx + 1 ;
-        end loop ;
-        l(idx-1) := s ;
-    end procedure ;
-
     function f(value : real ; fmt : string := "f") return string is
         variable fmt_spec : fmt_spec_t := parse(fmt, FLOAT) ;
         variable l : std.textio.line ;
+        variable temp : std.textio.line ;
         variable fillcount : natural ;
         variable sign : character ;
     begin
@@ -600,6 +636,10 @@ package body format is
             shift(l, fillcount/2) ;
         end if ;
         if fmt_spec.align = SIGN_EDGE then
+            if (l(1) /= fmt_spec.fill) or (fmt_spec.width = 0) then
+                std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
+                l := temp ;
+            end if ;
             if value >= 0.0 then
                 l(1) := '+' ;
             else
@@ -611,10 +651,21 @@ package body format is
             else
                 sign := '-' ;
             end if ;
+            if fmt_spec.width = 0 then
+                std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
+                l := temp ;
+            else
+                if fmt_spec.align = LEFT then
+                    shift(l, 1) ;
+                end if ;
+            end if ;
             if fmt_spec.align = LEFT then
-                shift(l, 1) ;
                 l(1) := sign ;
             else
+                if l(1) /= fmt_spec.fill then
+                    std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
+                    l := temp ;
+                end if ;
                 add_sign(l, sign, fmt_spec.fill) ;
             end if ;
         end if ;

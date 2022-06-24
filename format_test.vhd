@@ -459,13 +459,13 @@ begin
             -- Perform the actual comparison
             if result.all /= gold.all then
                 failed := failed + 1 ;
-                report fpr("Failure: '{}' /= '{}'", fstr(result.all,"s"), fstr(gold.all,"s"))
+                report f("Failure line {}: '{}' /= '{}'", f(lineno), fstr(result.all), fstr(gold.all))
                     severity warning ;
             end if ;
         end loop ;
 
         -- Final report
-        write(output, fpr("Tests: {}   Passed: {}   Failed: {}", f(tests, ">8d"), f(tests-failed, ">8d"), f(failed, ">8d")) & ENDL) ;
+        write(output, f("Tests: {}   Passed: {}   Failed: {}", f(tests, ">8d"), f(tests-failed, ">8d"), f(failed, ">8d")) & ENDL) ;
 
         -- Close the test file
         file_close(fin) ;
