@@ -173,7 +173,7 @@ package body format is
                                 exit ;
 
                             when others =>
-                                report "Unknown format code: " & fn(idx)
+                                report fstr("Unknown format code: {}", f(fn(idx)))
                                     severity warning ;
                                 exit ;
                         end case ;
@@ -234,7 +234,7 @@ package body format is
                                         fsm := FILL ;
 
                                     when others =>
-                                        report "Invalid format specifier: " & fn
+                                        report fpr("Invalid format specifier: {}", fstr(fn))
                                             severity warning ;
                                         exit ;
                                 end case ;
@@ -349,14 +349,14 @@ package body format is
                             rv.class := HEX ;
                         when others =>
                             rv.class := BINARY ;
-                            report "Unknown class: " & fn(idx) & " is not [bcdfosux] - defaulting to BINARY"
+                            report fpr("Unknown class: {} is not [bcdofsux] - defaulting to BINARY", f(fn(idx)))
                                 severity warning ;
                     end case ;
                     idx := idx + 1 ;
                     fsm := EXTRA ;
 
                 when EXTRA =>
-                    report "Extra characters in format specifier ignored : " & fn(idx to fn'length)
+                    report fpr("Extra characters in format specifier ignored : {}",  fstr(fn(idx to fn'length)))
                         severity warning ;
                     exit ;
 
@@ -528,7 +528,7 @@ package body format is
             when 12 => unit := 1 ps ;
             when 15 => unit := 1 fs ;
             when others =>
-                report "Time precision unknown: " & integer'image(fmt_spec.precision)
+                report fpr("Time precision unknown: {}", f(fmt_spec.precision))
                     severity warning ;
         end case ;
         std.textio.write(l, value, to_side(fmt_spec.align), fmt_spec.width, unit) ;
@@ -653,7 +653,7 @@ package body format is
     begin
         if index >= list.length then
             report "Cannot retrieve item, index out of bounds"
-            severity warning ;
+                severity warning ;
             l := null ;
         end if ;
         for i in 1 to index loop
@@ -721,8 +721,8 @@ package body format is
 
                             -- Add the next argument to the parts
                             length(args, len) ;
-                            assert argnum < len
-                                report "Too many arguments given the list: " & integer'image(argnum) & " >= " & integer'image(len)
+                            assert argnum <= len
+                                report f("Too many arguments given the list: {} > {}", f(argnum), f(len))
                                 severity warning ;
                             assert argnum_used = false
                                 report "Cannot mix argnum usage in format string"
@@ -747,7 +747,7 @@ package body format is
                             argnum_used := true ;
 
                         when others =>
-                            report "Invalid character inside formatter at position " & integer'image(i) & ": " & fn(i)
+                            report f("Invalid character inside formatter at position {}: {}", f(i), f(fn(i)))
                                 severity warning ;
                     end case ;
 
@@ -763,7 +763,7 @@ package body format is
                             fsm := COPY_STRING ;
 
                         when others =>
-                            report "Parsing error, RBRACE without corresponding LBRACE or RBRACE at " & integer'image(i-1) & ": " & fn
+                            report fpr("Parsing error, RBRACE without corresponding LBRACE or RBRACE at {}: {}", f(i-1), fstr(fn))
                                 severity warning ;
                     end case ;
 
@@ -773,7 +773,7 @@ package body format is
                             argnum := to_integer(fn(numstart to numstop)) ;
                             length(args, len) ;
                             assert argnum < len
-                                report "Invalid argnum (" & integer'image(argnum) & ") - total arguments: " & integer'image(len)
+                                report f("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
                                 severity warning ;
 
                             -- Append the argument
@@ -792,8 +792,8 @@ package body format is
                             numstop := i ;
 
                         when others =>
-                            report "Invalid argument specifier (" & fn(i) & ") at position " & integer'image(i)
-                            severity warning ;
+                            report f("Invalid argument specifier ({}) at position {}", f(fn(i)), f(i))
+                                severity warning ;
 
                     end case ;
             end case ;
@@ -805,8 +805,8 @@ package body format is
         if argnum_used = false then
             length(args, len) ;
             if argnum /= len then
-                report "Extra arguments passed into format expression - passed " & integer'image(len) & ", but used " & integer'image(argnum)
-                severity warning ;
+                report f("Extra arguments passed into format expression - passed {}, but used {}", f(len), f(argnum))
+                    severity warning ;
             end if ;
         end if ;
     end procedure ;

@@ -133,11 +133,11 @@ begin
             args := (others => null) ;
 
             -- Populate the arguments
-            if num_args > args'length then
-                report fpr("Too many arguments at line {}, trimming to {}", f(lineno,"d"), f(args'length,"d")) ;
-                num_args := args'length ;
-            end if ;
             for idx in 2 to 1+num_args loop
+                -- Ensure we don't run over
+                if idx-1 > args'length then
+                    exit ;
+                end if ;
                 get(lines, idx, args(idx-1)) ;
             end loop ;
 
@@ -332,7 +332,11 @@ begin
                                                   args(13).all,
                                                   args(14).all,
                                                   args(15).all)) ;
-                    when 16 =>
+                    when others =>
+                        if num_args > 16 then
+                            report fpr("Too many arguments on line {}: {} > 16, trimming to 16", f(lineno), f(num_args))
+                                severity warning ;
+                        end if ;
                         result := new string'(fpr(fmt.all,
                                                   args(1).all,
                                                   args(2).all,
@@ -350,10 +354,6 @@ begin
                                                   args(14).all,
                                                   args(15).all,
                                                   args(16).all)) ;
-                    when others =>
-                        report fpr("Too many arguments: {} > 16", f(num_args,"d"))
-                            severity failure ;
-                        result := new string'("") ;
                 end case ;
 
             -------------------------------------------------------------------
@@ -361,9 +361,13 @@ begin
             -------------------------------------------------------------------
             elsif cmd.all = "fproc" then
                 clear(args_list) ;
-                for i in 1 to num_args loop
-                    append(args_list, args(i).all) ;
+                for idx in 2 to len-1-1 loop
+                    get(lines, idx, l) ;
+                    append(args_list, l.all) ;
                 end loop ;
+                --for i in 1 to num_args loop
+                --    append(args_list, args(i).all) ;
+                --end loop ;
                 fproc(fmt.all, args_list, result) ;
 
             -------------------------------------------------------------------
