@@ -18,5 +18,6 @@ fstr            "<20s"          "yadda"                                     "yad
 fstr            ">20s"          "yadda"                                     "               yadda"
 fstr            ""              "naked string"                              "naked string"
 fstr            "-^20s"         "/\/\/\/\"                                  "------/\/\/\/\------"
+fstr            ".4s"           "12345678"                                  "1234"
 ftime           "12.9f"         "1 us"                                      "1000 ns     "
 ftime           ""              "1 us"                                      "1000 ns"

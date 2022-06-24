@@ -434,7 +434,12 @@ package body format is
         variable l : std.textio.line ;
         variable fillcount : natural ;
     begin
-        std.textio.write(l, s, to_side(fmt_spec.align), fmt_spec.width) ;
+        if (fmt_spec.precision > 0) and (value'length > fmt_spec.precision) then
+            -- Limiting the string size based on precision
+            return s(1 to fmt_spec.precision) ;
+        else
+            std.textio.write(l, s, to_side(fmt_spec.align), fmt_spec.width) ;
+        end if ;
         if fmt_spec.fill /= ' ' then
             fill(l, fmt_spec, fillcount) ;
         end if ;
