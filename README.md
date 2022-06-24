@@ -15,7 +15,7 @@ and `x` for hexadecimal.
 General usage is like this:
 
 ```
-write( output, f("{1} and {0} are both arguments", f(3.14159, ">8.20f"), f(200, "~^20d")) & CR & LF ) ;
+write(output, f("{1:~^20d} and {0:>8.20f} are both arguments" & CR & LF, f(3.14159), f(200))) ;
 ```
 
 The previous should create the string:
@@ -23,6 +23,9 @@ The previous should create the string:
 ```
 ~~~~~~~~200~~~~~~~~~ and 3.14159000000000000000 are both arguments
 ```
+
+Note the argument swapping occurred.  Formatting can also be done on just the types themselves,
+or the overall format string.
 
 VHDL-2008 is required.
 
