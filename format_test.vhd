@@ -65,6 +65,20 @@ architecture arch of format_test is
 
     constant ENDL : string := ( CR & LF ) ;
 
+    -- Define the custom type
+    type state_t is (IDLE, CHECKING, FOO, BAR) ;
+    signal state : state_t := CHECKING ;
+
+    -- Define the procedure to get a line from the custom state
+    procedure get_line(x : state_t ; variable l : inout std.textio.line) is
+    begin
+        -- simple 'image attribute
+        l := new string'(state_t'image(x)) ;
+    end procedure ;
+
+    -- VHDL-2008 required with generic subprograms
+    --function f is new fgeneric generic map (t => state_t) ;
+
 begin
 
     test : process
@@ -469,6 +483,11 @@ begin
 
         -- Close the test file
         file_close(fin) ;
+
+        -- VHDL-2008 required with generic subprograms
+        --report fpr("state: {}", f(state, "->20s")) ;
+        -- Alternative that doesn't require generic subprograms
+        --report fpr("state: {}", fstr(state_t'image(state), "->20s")) ;
 
         -- Done
         std.env.stop ;

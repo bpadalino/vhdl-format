@@ -58,6 +58,16 @@ package format is
 
     procedure fill(variable l : inout std.textio.line ; variable fmt_spec : fmt_spec_t ; variable fillcount : inout natural) ;
 
+    ---------------------------------------------------------------------------
+    -- VHDL-2008 Generic Function
+    ---------------------------------------------------------------------------
+    ---- TODO: Generic f() function which utilizes the type'image to get the string and just pass to fstr()?
+    ---- Useful for custom enumerated types?
+    --function fgeneric
+    --    generic(type t; procedure get_line(x : t ; variable l : inout std.textio.line) is <>)
+    --    parameter(value : t ; fmt : string := "s")
+    --    return string ;
+
     procedure f(fmt : string ; variable args : inout string_list ; variable l : inout std.textio.line) ;
     alias fproc is f[string, string_list, std.textio.line] ;
 
@@ -108,6 +118,20 @@ package format is
 end package ;
 
 package body format is
+
+    ---------------------------------------------------------------------------
+    -- VHDL-2008 Generic Function
+    ---------------------------------------------------------------------------
+    --function fgeneric
+    --    generic(type t; procedure get_line(x : t ; variable l : inout std.textio.line) is <>)
+    --    parameter(value : t ; fmt : string := "s")
+    --    return string
+    --is
+    --    variable l : std.textio.line ;
+    --begin
+    --    get_line(value, l) ;
+    --    return fstr(l.all, fmt) ;
+    --end function ;
 
     function to_integer(val : string) return integer is
         alias x : string(1 to val'length) is val ;
