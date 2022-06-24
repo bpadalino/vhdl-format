@@ -130,7 +130,7 @@ begin
             -- Calculate arguments given the number of lines we split
             num_args := len - 1 - 1 - 1 ;
             if num_args < 0 then
-                report "Invalid test at line " & integer'image(lineno) & ": " & l.all
+                report fpr("Invalid test at line {}: {}", f(lineno), l.all)
                     severity warning ;
                 next ;
             end if ;
@@ -179,7 +179,7 @@ begin
             if cmd.all = "fint" then
                 read(args(1), int_arg, good) ;
                 if good = false then
-                    report "Invalid integer read: " & args(1).all
+                    report fpr("Invalid integer argument: {}", args(1).all)
                         severity warning ;
                 end if ;
                 if fmt'length > 0 then
@@ -388,7 +388,7 @@ begin
             elsif cmd.all = "freal" then
                 read(args(1), real_arg, good) ;
                 if good = false then
-                    report "Invalid real argument: " & args(1).all
+                    report fpr("Invalid real argument: {}", args(1).all)
                         severity warning ;
                 end if ;
                 if fmt'length > 0 then
@@ -425,7 +425,7 @@ begin
             elsif cmd.all = "ftime" then
                 read(args(1), time_arg, good) ;
                 if good = false then
-                    report "Invalid time argument: " & args(1).all
+                    report fpr("Invalid time argument: {}", args(1).all)
                         severity warning ;
                     end if ;
                 if fmt'length > 0 then
@@ -446,7 +446,7 @@ begin
             -- Unknown command
             -------------------------------------------------------------------
             else
-                report fpr("Unknown command on line {}: {}", f(lineno, "d"), cmd.all) ;
+                report fpr("Unknown command on line {}: {}", f(lineno), cmd.all) ;
             end if ;
 
             -- Increment test count
