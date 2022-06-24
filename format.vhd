@@ -71,35 +71,35 @@ package format is
     alias fpr is f[string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string return string] ;
 
     -- Helper functions
-    function f(value : bit ; fmt : string) return string ;
+    function f(value : bit ; fmt : string := "b") return string ;
     alias fbit is f[bit, string return string] ;
 
     --function f(value : bit_vector ; fmt : string) return string ;
     --alias fbv is f[bit_vector, string return string] ;
 
-    function f(value : boolean ; fmt : string) return string ;
+    function f(value : boolean ; fmt : string := "s") return string ;
     alias fbool is f[boolean, string return string] ;
 
-    function f(value : character ; fmt : string) return string ;
+    function f(value : character ; fmt : string := "c") return string ;
     alias fchar is f[character, string return string] ;
 
-    function f(value : integer ; fmt : string) return string ;
+    function f(value : integer ; fmt : string := "d") return string ;
     alias fint is f[integer, string return string] ;
 
-    function f(value : real ; fmt : string) return string ;
+    function f(value : real ; fmt : string := "f") return string ;
     alias freal is f[real, string return string] ;
 
     --function f(value : signed ; fmt : string) return string ;
     -- alias fsigned is f[signed, string return string] ;
 
-    function f(value : string ; fmt : string) return string ;
+    function f(value : string ; fmt : string := "s") return string ;
     alias fstr is f[string, string return string] ;
 
-    function f(value : time ; fmt : string) return string ;
+    function f(value : time ; fmt : string := ".9f") return string ;
     alias ftime is f[time, string return string] ;
 
     --function f(value : std_logic ; fmt : string) return string ;
-    function f(value : std_logic_vector ; fmt : string) return string ;
+    function f(value : std_logic_vector ; fmt : string := "b" ) return string ;
     alias fslv is f[std_logic_vector, string return string] ;
 
     --function f(value : unsigned ; fmt : string) return string ;
@@ -434,7 +434,7 @@ package body format is
         end loop ;
     end procedure ;
 
-    function f(value : string ; fmt : string) return string is
+    function f(value : string ; fmt : string := "s") return string is
         alias s : string(1 to value'length) is value ;
         variable fmt_spec : fmt_spec_t := parse(fmt, STR) ;
         variable l : std.textio.line ;
@@ -462,7 +462,7 @@ package body format is
         return fstr(s, fmt) ;
     end function ;
 
-    function f(value : std_logic_vector ; fmt : string) return string is
+    function f(value : std_logic_vector ; fmt : string := "b") return string is
         variable fmt_spec : fmt_spec_t := parse(fmt) ;
         variable l : std.textio.line ;
     begin
@@ -499,7 +499,7 @@ package body format is
     end function ;
 
 
-    function f(value : bit ; fmt : string) return string is
+    function f(value : bit ; fmt : string := "b") return string is
         variable fmt_spec : fmt_spec_t := parse(fmt, BINARY) ;
         variable l : std.textio.line ;
     begin
@@ -507,7 +507,7 @@ package body format is
         return l.all ;
     end function ;
 
-    function f(value : boolean ; fmt : string) return string is
+    function f(value : boolean ; fmt : string := "s") return string is
         variable fmt_spec : fmt_spec_t := parse(fmt, BINARY) ;
         variable l : std.textio.line ;
     begin
@@ -515,7 +515,7 @@ package body format is
         return l.all ;
     end function ;
 
-    function f(value : character ; fmt : string) return string is
+    function f(value : character ; fmt : string := "c") return string is
         variable fmt_spec : fmt_spec_t := parse(fmt, CHAR) ;
         variable l : std.textio.line ;
     begin
@@ -523,7 +523,7 @@ package body format is
         return l.all ;
     end function ;
 
-    function f(value : time ; fmt : string) return string is
+    function f(value : time ; fmt : string := ".9f" ) return string is
         variable fmt_spec : fmt_spec_t := parse(fmt, FLOAT) ;
         variable l : std.textio.line ;
         variable unit : time := 1 sec ;
@@ -548,7 +548,7 @@ package body format is
         return l.all ;
     end function ;
 
-    function f(value : integer ; fmt : string) return string is
+    function f(value : integer ; fmt : string := "d") return string is
         variable fmt_spec : fmt_Spec_t := parse(fmt, INT) ;
         variable l : std.textio.line ;
         variable fillcount : natural ;
@@ -583,7 +583,7 @@ package body format is
         l(idx-1) := s ;
     end procedure ;
 
-    function f(value : real ; fmt : string) return string is
+    function f(value : real ; fmt : string := "f") return string is
         variable fmt_spec : fmt_spec_t := parse(fmt, FLOAT) ;
         variable l : std.textio.line ;
         variable fillcount : natural ;

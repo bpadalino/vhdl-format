@@ -170,7 +170,11 @@ begin
                     report "Invalid integer read: " & args(1).all
                         severity warning ;
                 end if ;
-                result := new string'(fint(int_arg, fmt.all)) ;
+                if fmt'length > 0 then
+                    result := new string'(fint(int_arg, fmt.all)) ;
+                else
+                    result := new string'(fint(int_arg)) ;
+                end if ;
 
             -------------------------------------------------------------------
             -- fpr
@@ -371,7 +375,12 @@ begin
                     report "Invalid real argument: " & args(1).all
                         severity warning ;
                 end if ;
-                result := new string'(freal(real_arg, fmt.all)) ;
+                if fmt'length > 0 then
+                    result := new string'(freal(real_arg, fmt.all)) ;
+                else
+                    result := new string'(freal(real_arg)) ;
+                end if ;
+
             -------------------------------------------------------------------
             -- fsfixed
             -------------------------------------------------------------------
@@ -388,7 +397,11 @@ begin
             -- fstr
             -------------------------------------------------------------------
             elsif cmd.all = "fstr" then
-                result := new string'(fstr(args(1).all, fmt.all)) ;
+                if fmt'length > 0 then
+                    result := new string'(fstr(args(1).all, fmt.all)) ;
+                else
+                    result := new string'(fstr(args(1).all)) ;
+                end if ;
 
             -------------------------------------------------------------------
             -- ftime
@@ -399,7 +412,11 @@ begin
                     report "Invalid time argument: " & args(1).all
                         severity warning ;
                     end if ;
-                result := new string'(ftime(time_arg, fmt.all)) ;
+                if fmt'length > 0 then
+                    result := new string'(ftime(time_arg, fmt.all)) ;
+                else
+                    result := new string'(ftime(time_arg)) ;
+                end if ;
 
             -------------------------------------------------------------------
             -- fufixed
