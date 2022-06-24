@@ -84,6 +84,7 @@ begin
         file fin            :   text ;
         variable fstatus    :   file_open_status ;
         variable l          :   line ;
+        variable ll         :   line ;
         variable bit_arg    :   bit ;
         variable bool_arg   :   boolean ;
         variable char_arg   :   character ;
@@ -174,9 +175,60 @@ begin
             -------------------------------------------------------------------
 
             -------------------------------------------------------------------
+            -- fi
+            -------------------------------------------------------------------
+            if cmd.all = "fi" then
+                read(args(1), int_arg, good) ;
+                if good = false then
+                    report fpr("Invalid integer argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(fmt.all, int_arg)) ;
+                else
+                    report "fi command requires a format string, none given"
+                        severity warning ;
+                    result := new string'("") ;
+                end if ;
+
+            -------------------------------------------------------------------
+            -- fr
+            -------------------------------------------------------------------
+            elsif cmd.all = "fr" then
+                read(args(1), real_arg, good) ;
+                if good = false then
+                    report fpr("Invalid real argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(fmt.all, real_arg)) ;
+                else
+                    report "fr command requires a format string, none given"
+                        severity warning ;
+                    result := new string'("") ;
+                end if ;
+
+            -------------------------------------------------------------------
+            -- ft
+            -------------------------------------------------------------------
+            elsif cmd.all = "ft" then
+                read(args(1), time_arg, good) ;
+                if good = false then
+                    report fpr("Invalid time argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(fmt.all, time_arg)) ;
+                else
+                    report "ft command requires a format string, none given"
+                        severity warning ;
+                    result := new string'("") ;
+                end if ;
+
+            -------------------------------------------------------------------
             -- fint
             -------------------------------------------------------------------
-            if cmd.all = "fint" then
+            elsif cmd.all = "fint" then
                 read(args(1), int_arg, good) ;
                 if good = false then
                     report fpr("Invalid integer argument: {}", args(1).all)
@@ -477,7 +529,7 @@ begin
         end loop ;
 
         -- Final report
-        write(output, f("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}", f(tests), f(tests-failed), f(failed)) & ENDL) ;
+        write(output, f("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}" & ENDL, f(tests), f(tests-failed), f(failed))) ;
 
         -- Close the test file
         file_close(fin) ;

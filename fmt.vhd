@@ -23,12 +23,14 @@ package fmt is
     --  b       Binary
     --  c       Character
     --  d       Signed integer
-    --  f       Floating point
+    --  e       Floating point (exp notation)
+    --  f       Floating point (fixed notation)
     --  o       Octal
     --  s       String
+    --  t       Time value
     --  u       Unsigned integer
     --  x       Hexadecimal
-    type class_t is (BINARY, CHAR, INT, FLOAT, OCTAL, STR, UINT, HEX) ;
+    type class_t is (BINARY, CHAR, INT, FLOAT_EXP, FLOAT_FIXED, OCTAL, STR, TIMEVAL, UINT, HEX) ;
 
     -- [fill][align][sign][width][.precision][class]
     -- NOTE: # after sign might be good for prefixes (0b, 0o, 0x) and might be easy to implement.
@@ -49,10 +51,10 @@ package fmt is
         sign        =>  false,
         width       =>  0,
         precision   =>  0,
-        class       =>  BINARY
+        class       =>  STR
     ) ;
 
-    function parse(fmt : string ; default_class : class_t := BINARY) return fmt_spec_t ;
+    function parse(fmt : string ; default_class : class_t := STR) return fmt_spec_t ;
 
     function to_side(value : align_t) return std.textio.side ;
 
@@ -73,6 +75,11 @@ package fmt is
 
     function f(fmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string ;
     alias fpr is f[string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string return string] ;
+
+    -- Single argument formatting
+    function f(fmt : string ; val : integer) return string ;
+    function f(fmt : string ; val : real) return string ;
+    function f(fmt : string ; val : time) return string ;
 
     -- Helper functions
     function f(value : bit ; fmt : string := "b") return string ;
@@ -99,7 +106,7 @@ package fmt is
     function f(value : string ; fmt : string := "s") return string ;
     alias fstr is f[string, string return string] ;
 
-    function f(value : time ; fmt : string := ".9f") return string ;
+    function f(value : time ; fmt : string := ".9t") return string ;
     alias ftime is f[time, string return string] ;
 
     --function f(value : std_logic ; fmt : string) return string ;
@@ -118,6 +125,7 @@ package fmt is
 end package ;
 
 package body fmt is
+
 
     ---------------------------------------------------------------------------
     -- VHDL-2008 Generic Function
@@ -154,7 +162,7 @@ package body fmt is
         return rv ;
     end function ;
 
-    function parse(fmt : string ; default_class : class_t := BINARY) return fmt_spec_t is
+    function parse(fmt : string ; default_class : class_t := STR) return fmt_spec_t is
         alias fn : string(1 to fmt'length) is fmt ;
         type fsm_t is (START, FILL, ALIGN, SIGN, WIDTH, DOT, PRECISION, CLASS, EXTRA) ;
         variable fsm : fsm_t := START ;
@@ -169,12 +177,10 @@ package body fmt is
                 severity warning ;
         rv.class := default_class ;
         while idx <= fn'length loop
-            --std.textio.write(std.textio.output, "idx: " & integer'image(idx) & " state: " & fsm_t'image(fsm) & " " & fn(idx) & CR & LF);
             case fsm is
                 when START =>
                     if fn'length = 1 then
                         -- Only a single character
-                        -- Default values
                         case fn(idx) is
                             when '<'|'>'|'^'|'=' =>
                                 -- Alignment but it doesn't matter since no width
@@ -188,7 +194,7 @@ package body fmt is
                                 -- Sign
                                 rv.sign := true ;
 
-                            when 'b'|'B'|'c'|'C'|'d'|'D'|'f'|'F'|'o'|'O'|'s'|'S'|'u'|'U'|'x'|'X' =>
+                            when 'b'|'B'|'c'|'C'|'d'|'D'|'e'|'E'|'f'|'F'|'o'|'O'|'s'|'S'|'t'|'T'|'u'|'U'|'x'|'X' =>
                                 -- Class
                                 fsm := CLASS ;
 
@@ -364,18 +370,33 @@ package body fmt is
                             rv.class := CHAR ;
                         when 'd'|'D' =>
                             rv.class := INT ;
+                        when 'e'|'E' =>
+                            -- Normalized d[.precision]e[+-]dd notation
+                            rv.class := FLOAT_EXP ;
+                            if precision_present = false then
+                                -- Precision isn't mentioned, so default to 6
+                                rv.precision := 6 ;
+                            end if ;
                         when 'f'|'F' =>
-                            if precision_present = true and rv.precision = 0 then
-                                -- Precision was specified, so change the class to int to cut off
-                                -- any decimal representation
-                                rv.class := INT ;
+                            if precision_present = true then
+                                if rv.precision = 0 then
+                                    -- Precision was specified, so change the class to int to cut off
+                                    -- any decimal representation
+                                    rv.class := INT ;
+                                else
+                                    rv.class := FLOAT_FIXED ;
+                                end if ;
                             else
-                                rv.class := FLOAT ;
+                                -- Precision isn't present, so default the precision to 6 places
+                                rv.precision := 6 ;
+                                rv.class := FLOAT_FIXED ;
                             end if ;
                         when 'o'|'O' =>
                             rv.class := OCTAL ;
                         when 's'|'S' =>
                             rv.class := STR ;
+                        when 't'|'T' =>
+                            rv.class := TIMEVAL ;
                         when 'u'|'U' =>
                             rv.class := UINT ;
                         when 'x'|'X' =>
@@ -395,11 +416,13 @@ package body fmt is
 
             end case ;
         end loop ;
+
+        -- Parse the last bit of data
         case fsm is
             when WIDTH =>
                 rv.width := to_integer(fmt(numstart to numstop)) ;
             when PRECISION =>
-                rv.width := to_integer(fmt(numstart to numstop)) ;
+                rv.precision := to_integer(fmt(numstart to numstop)) ;
             when others =>
                 null ;
         end case ;
@@ -412,14 +435,16 @@ package body fmt is
         variable newl : std.textio.line := new string'(l.all) ;
         variable dest : positive := shift + 1 ;
     begin
-        for idx in l'range loop
-            newl(dest) := l(idx) ;
-            dest := dest + 1 ;
-            if dest = l'length + 1 then
-                dest := 1 ;
-            end if ;
-        end loop ;
-        l := newl ;
+        if shift > 0 then
+            for idx in l'range loop
+                newl(dest) := l(idx) ;
+                dest := dest + 1 ;
+                if dest = l'length + 1 then
+                    dest := 1 ;
+                end if ;
+            end loop ;
+            l := newl ;
+        end if ;
     end procedure ;
 
     function to_side(value : align_t) return std.textio.side is
@@ -552,8 +577,8 @@ package body fmt is
         return l.all ;
     end function ;
 
-    function f(value : time ; fmt : string := ".9f" ) return string is
-        variable fmt_spec : fmt_spec_t := parse(fmt, FLOAT) ;
+    function f(value : time ; fmt : string := ".9t" ) return string is
+        variable fmt_spec : fmt_spec_t := parse(fmt, TIMEVAL) ;
         variable l : std.textio.line ;
         variable unit : time := 1 sec ;
         variable fillcount : natural ;
@@ -587,7 +612,7 @@ package body fmt is
     end procedure ;
 
     function f(value : integer ; fmt : string := "d") return string is
-        variable fmt_spec : fmt_Spec_t := parse(fmt, INT) ;
+        variable fmt_spec : fmt_spec_t := parse(fmt, INT) ;
         variable l : std.textio.line ;
         variable temp : std.textio.line ;
         variable fillcount : natural ;
@@ -640,57 +665,89 @@ package body fmt is
     end function ;
 
     function f(value : real ; fmt : string := "f") return string is
-        variable fmt_spec : fmt_spec_t := parse(fmt, FLOAT) ;
+        variable fmt_spec : fmt_spec_t := parse(fmt, FLOAT_FIXED) ;
         variable l : std.textio.line ;
+        variable exp : std.textio.line ;
+        variable precision : std.textio.line ;
         variable temp : std.textio.line ;
+        variable tempreal : real ;
+        variable good : boolean ;
         variable fillcount : natural ;
         variable sign : character ;
     begin
         if fmt_spec.class = INT then
             -- Cast to an integer
             return f(integer(value), fmt) ;
+        elsif fmt_spec.class = FLOAT_EXP then
+            -- Limit the precision first so things round correctly
+            std.textio.write(exp, value, std.textio.left, fmt_spec.width, 0) ;
+            -- Get the rounded value
+            std.textio.write(precision, 1.0+value-real(integer((value))), std.textio.left, 0, fmt_spec.precision);
+            -- ... now concatenate the info from exp and precision into the full string
+            if fmt_spec.precision > 0 then
+                l := new string'(exp(1 to 2) & precision(3 to 3+fmt_spec.precision-1) & exp(9 to exp'high)) ;
+            else
+                l := new string'(exp(1 to 1) & exp(9 to exp'high)) ;
+            end if ;
+        elsif fmt_spec.class = FLOAT_FIXED then
+            std.textio.write(l, value, to_side(fmt_spec.align), fmt_spec.width, fmt_spec.precision) ;
         end if ;
-        --print_fmt_spec(fmt, fmt_spec) ;
-        std.textio.write(l, value, to_side(fmt_spec.align), fmt_spec.width, fmt_spec.precision) ;
+
+        if value < 0.0 then
+            sign := '-' ;
+        else
+            sign := '+' ;
+        end if ;
+
         fill(l, fmt_spec, fillcount) ;
-        if fmt_spec.align = CENTERED then
-            -- Circularly shift the filled output
-            shift(l, fillcount/2) ;
-        end if ;
-        if fmt_spec.align = SIGN_EDGE then
-            if (l(1) /= fmt_spec.fill) or (fmt_spec.width = 0) then
-                std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
-                l := temp ;
-            end if ;
-            if value >= 0.0 then
-                l(1) := '+' ;
-            else
-                l(1) := '-' ;
-            end if ;
-        elsif fmt_spec.sign = true then
-            if value >= 0.0 then
-                sign := '+' ;
-            else
-                sign := '-' ;
-            end if ;
-            if fmt_spec.width = 0 then
-                std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
-                l := temp ;
-            else
-                if fmt_spec.align = LEFT then
-                    shift(l, 1) ;
+
+        case fmt_spec.align is
+
+            when SIGN_EDGE =>
+                if fmt_spec.sign = false then
+                    report "Format alignment set to SIGN_EDGE without SIGN - assuming SIGN"
+                        severity warning ;
                 end if ;
-            end if ;
-            if fmt_spec.align = LEFT then
-                l(1) := sign ;
-            else
-                if l(1) /= fmt_spec.fill then
+                if (l(1) /= fmt_spec.fill) or (fmt_spec.width = 0) then
                     std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
                     l := temp ;
                 end if ;
-                add_sign(l, sign, fmt_spec.fill) ;
-            end if ;
-        end if ;
+                l(1) := sign ;
+
+            when LEFT|CENTERED =>
+                if fmt_spec.sign = true then
+                    if (l(l'length) /= fmt_spec.fill) then
+                        -- Full number in line, but we need room for the sign, so extend by 1
+                        std.textio.write(temp, l.all, std.textio.left, l'length+1) ;
+                        l := temp ;
+                    end if ;
+                    -- Shift the line to the right by 1
+                    shift(l, 1) ;
+
+                    -- Add the sign
+                    l(1) := sign ;
+                end if ;
+
+                if fmt_spec.align = CENTERED then
+                    -- Alignment just needs to be shifted
+                    shift(l, fillcount/2) ;
+                end if ;
+
+            when RIGHT =>
+                if fmt_spec.sign = true then
+                    if (l(1) /= fmt_spec.fill) then
+                        -- Full number in line, but we need room for the sign, so extend by 1
+                        std.textio.write(temp, l.all, std.textio.right, l'length+1) ;
+                    end if ;
+                    -- Add the sign
+                    add_sign(l, sign, fmt_spec.fill) ;
+                end if ;
+
+            when others =>
+                report "Got into a strange place"
+                    severity warning ;
+        end case ;
+
         return l.all ;
     end function ;
 
@@ -752,6 +809,7 @@ package body fmt is
         variable newl : std.textio.line ;
         variable real_arg : real ;
         variable int_arg : integer ;
+        variable time_arg : time ;
         variable good : boolean ;
         variable fmt_spec : fmt_spec_t := parse(fmt) ;
     begin
@@ -764,7 +822,7 @@ package body fmt is
                 end if ;
                 newl := new string'(f(int_arg, fmt)) ;
 
-            when FLOAT =>
+            when FLOAT_EXP|FLOAT_FIXED =>
                 std.textio.read(l, real_arg, good) ;
                 if good = false then
                     report fpr("Could not reformat argument as float: {}", l.all)
@@ -772,7 +830,19 @@ package body fmt is
                 end if ;
                 newl := new string'(f(real_arg, fmt)) ;
 
+            when STR =>
+                newl := new string'(fstr(l.all, fmt)) ;
+
+            when TIMEVAL =>
+                std.textio.read(l, time_arg, good) ;
+                if good = false then
+                    report fpr("Could not reformat argument as time: {}", l.all)
+                        severity warning ;
+                end if ;
+                newl := new string'(f(time_arg, fmt)) ;
+
             when others =>
+                report fpr("Unknown format to reformat, using string: {}", fmt) ;
                 newl := new string'(fstr(l.all, fmt)) ;
         end case ;
         l := newl ;
@@ -787,11 +857,11 @@ package body fmt is
         variable numstart       : positive ;
         variable numstop        : positive ;
         variable argnum_used    : boolean := false ;
+        variable argnum_limited : natural := 0 ;
         variable len            : natural ;
         variable l              : std.textio.line ;
         variable fmt_start      : positive ;
         variable fmt_stop       : positive ;
-        variable fmt_spec       : fmt_spec_t ;
     begin
         start := 1 ;
         stop  := 1 ;
@@ -837,11 +907,12 @@ package body fmt is
                             length(args, len) ;
                             assert argnum <= len
                                 report f("Too many arguments given the list: {} > {}", f(argnum), f(len))
-                                severity warning ;
-                            assert argnum_used = false
-                                report "Cannot mix argnum usage in format string"
-                                severity warning ;
+                                    severity warning ;
+                            if argnum_used = true then
+                                report fpr("Cannot mix argnum usage in format string: {} @ {}", fn, f(i)) ;
+                            end if ;
                             if argnum >= len then
+                                argnum_limited := argnum_limited + 1 ;
                                 argnum := len - 1 ;
                             end if ;
                             get(args, argnum, l) ;
@@ -861,17 +932,9 @@ package body fmt is
                             argnum_used := true ;
 
                         when ':' =>
-                            -- No argument number here, just format specifier
+                            -- No argument number here, just format specifier ...
+                            -- ... but don't increment the argnum yet
                             length(args, len) ;
-                            assert argnum <= len
-                                report f("Too many arguments given the list: {} > {}", f(argnum), f(len))
-                                severity warning ;
-                            assert argnum_used = false
-                                report "Cannot mix argnum usage in format string"
-                                severity warning ;
-                            if argnum >= len then
-                                argnum := len - 1 ;
-                            end if ;
 
                             -- Get ready to parse the format specifier
                             fmt_start := i + 1 ;
@@ -909,6 +972,7 @@ package body fmt is
                                 severity warning ;
 
                             if argnum >= len then
+                                argnum_limited := argnum_limited + 1 ;
                                 argnum := len - 1 ;
                             end if ;
                             -- Append the argument
@@ -932,6 +996,7 @@ package body fmt is
                                 severity warning ;
 
                             if argnum >= len then
+                                argnum_limited := argnum_limited + 1 ;
                                 argnum := len - 1 ;
                             end if ;
 
@@ -948,8 +1013,16 @@ package body fmt is
                 when READ_FMT =>
                     case fn(i) is
                         when '}' =>
-                            -- Reformat the argument
-                            fmt_spec := parse(fn(fmt_start to fmt_stop)) ;
+                            -- End of the format so check argument numbers
+                            assert argnum <= len
+                                report f("Too many arguments given the list: {} > {}", f(argnum), f(len))
+                                    severity warning ;
+
+                            -- Keep track of the number of times we limit arguments
+                            if argnum >= len then
+                                argnum_limited := argnum_limited + 1 ;
+                                argnum := len - 1 ;
+                            end if ;
 
                             -- Initial formatted argument now in l
                             get(args, argnum, l) ;
@@ -960,7 +1033,7 @@ package body fmt is
                             -- Add the reformatted line to the argnums
                             append(parts, l.all) ;
 
-                            -- Increment the argnum if we aren't using 
+                            -- Increment the argnum if we aren't explicitly noting the arguments
                             if argnum_used = false then
                                 argnum := argnum + 1 ;
                             end if ;
@@ -980,6 +1053,13 @@ package body fmt is
 
         -- Add the final bit
         append(parts, fn(start to stop) ) ;
+
+        -- Check if we hit an argnum limit
+        if argnum_limited > 0 then
+            length(args, len) ;
+            report f("More formats than arguments: {} extra", argnum_limited)
+                severity warning ;
+        end if ;
 
         if argnum_used = false then
             length(args, len) ;
@@ -1069,6 +1149,21 @@ package body fmt is
         -- Return the concatenated parts
         concatenate_list(parts, l) ;
         return l.all ;
+    end function ;
+
+    function f(fmt : string ; val : integer) return string is
+    begin
+        return fpr(fmt, f(val)) ;
+    end function ;
+
+    function f(fmt : string ; val : real) return string is
+    begin
+        return fpr(fmt, f(val)) ;
+    end function ;
+
+    function f(fmt : string ; val : time) return string is
+    begin
+        return fpr(fmt, f(val)) ;
     end function ;
 
     procedure f(fmt : string ; variable args : inout string_list ; variable l : inout std.textio.line) is
