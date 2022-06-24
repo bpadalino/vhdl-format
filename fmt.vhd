@@ -748,8 +748,38 @@ package body fmt is
         len := list.length ;
     end procedure ;
 
+    procedure reformat(l : inout std.textio.line ; fmt : string) is
+        variable newl : std.textio.line ;
+        variable real_arg : real ;
+        variable int_arg : integer ;
+        variable good : boolean ;
+        variable fmt_spec : fmt_spec_t := parse(fmt) ;
+    begin
+        case fmt_spec.class is
+            when INT|UINT =>
+                std.textio.read(l, int_arg, good) ;
+                if good = false then
+                    report fpr("Could not reformat argument as integer: {}", l.all)
+                        severity warning ;
+                end if ;
+                newl := new string'(f(int_arg, fmt)) ;
+
+            when FLOAT =>
+                std.textio.read(l, real_arg, good) ;
+                if good = false then
+                    report fpr("Could not reformat argument as float: {}", l.all)
+                        severity warning ;
+                end if ;
+                newl := new string'(f(real_arg, fmt)) ;
+
+            when others =>
+                newl := new string'(fstr(l.all, fmt)) ;
+        end case ;
+        l := newl ;
+    end procedure ;
+
     procedure create_parts(fn : string ; variable parts : inout string_list ; variable args : inout string_list) is
-        type fsm_t is (COPY_STRING, LBRACE, RBRACE, READ_ARGNUM) ;
+        type fsm_t is (COPY_STRING, LBRACE, RBRACE, READ_ARGNUM, READ_FMT) ;
         variable fsm            : fsm_t := COPY_STRING ;
         variable start          : positive ;
         variable stop           : positive ;
@@ -759,6 +789,9 @@ package body fmt is
         variable argnum_used    : boolean := false ;
         variable len            : natural ;
         variable l              : std.textio.line ;
+        variable fmt_start      : positive ;
+        variable fmt_stop       : positive ;
+        variable fmt_spec       : fmt_spec_t ;
     begin
         start := 1 ;
         stop  := 1 ;
@@ -827,6 +860,24 @@ package body fmt is
                             fsm := READ_ARGNUM ;
                             argnum_used := true ;
 
+                        when ':' =>
+                            -- No argument number here, just format specifier
+                            length(args, len) ;
+                            assert argnum <= len
+                                report f("Too many arguments given the list: {} > {}", f(argnum), f(len))
+                                severity warning ;
+                            assert argnum_used = false
+                                report "Cannot mix argnum usage in format string"
+                                severity warning ;
+                            if argnum >= len then
+                                argnum := len - 1 ;
+                            end if ;
+
+                            -- Get ready to parse the format specifier
+                            fmt_start := i + 1 ;
+                            fmt_stop := i + 1 ;
+                            fsm := READ_FMT ;
+
                         when others =>
                             report f("Invalid character inside formatter at position {}: {}", f(i), f(fn(i)))
                                 severity warning ;
@@ -857,10 +908,10 @@ package body fmt is
                                 report f("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
                                 severity warning ;
 
-                            -- Append the argument
                             if argnum >= len then
                                 argnum := len - 1 ;
                             end if ;
+                            -- Append the argument
                             get(args, argnum, l) ;
                             append(parts, l.all) ;
 
@@ -872,9 +923,56 @@ package body fmt is
                         when '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9' =>
                             numstop := i ;
 
+                        when ':' =>
+                            -- Read the argnum, but go off to read and reformat the argument
+                            argnum := to_integer(fn(numstart to numstop)) ;
+                            length(args, len) ;
+                            assert argnum < len
+                                report f("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
+                                severity warning ;
+
+                            if argnum >= len then
+                                argnum := len - 1 ;
+                            end if ;
+
+                            fsm := READ_FMT ;
+                            fmt_start := i + 1 ;
+                            fmt_stop := i + 1 ;
+
                         when others =>
                             report f("Invalid argument specifier ({}) at position {}", f(fn(i)), f(i))
                                 severity warning ;
+
+                    end case ;
+
+                when READ_FMT =>
+                    case fn(i) is
+                        when '}' =>
+                            -- Reformat the argument
+                            fmt_spec := parse(fn(fmt_start to fmt_stop)) ;
+
+                            -- Initial formatted argument now in l
+                            get(args, argnum, l) ;
+
+                            -- Reformat l into the new formatted thing
+                            reformat(l, fn(fmt_start to fmt_stop)) ;
+
+                            -- Add the reformatted line to the argnums
+                            append(parts, l.all) ;
+
+                            -- Increment the argnum if we aren't using 
+                            if argnum_used = false then
+                                argnum := argnum + 1 ;
+                            end if ;
+
+                            -- Start the next piece
+                            fsm := COPY_STRING ;
+                            start := i + 1 ;
+                            stop := i ;
+
+                        when others =>
+                            -- Haven't closed the brace yet, so just keep going
+                            fmt_stop := i ;
 
                     end case ;
             end case ;
