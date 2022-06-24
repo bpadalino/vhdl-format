@@ -49,15 +49,6 @@ package format is
         class       =>  BINARY
     ) ;
 
-    constant DEFAULT_FMT_SPEC_REAL : fmt_spec_t := (
-        fill        =>  ' ',
-        align       =>  LEFT,
-        sign        =>  false,
-        width       =>  0,
-        precision   =>  0,
-        class       =>  FLOAT
-    ) ;
-
     function parse(fmt : string ; default_class : class_t := BINARY) return fmt_spec_t ;
 
     function to_side(value : align_t) return std.textio.side ;
