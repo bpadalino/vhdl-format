@@ -4,15 +4,15 @@ library ieee ;
     use ieee.std_logic_1164.all ;
 
 library work ;
-    use work.format.all ;
+    use work.fmt.all ;
 
-entity format_test is
+entity fmt_test is
   generic (
     FNAME   :   string := "./vectors/format_test_vectors.txt"
   ) ;
 end entity ;
 
-architecture arch of format_test is
+architecture arch of fmt_test is
 
     procedure split(variable lines : inout string_list ; variable l : inout line) is
         variable start : positive := 1 ;

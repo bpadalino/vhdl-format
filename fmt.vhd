@@ -1,7 +1,7 @@
 library ieee ;
     use ieee.std_logic_1164.all ;
 
-package format is
+package fmt is
 
     -- TODO: Can this be a generic linked list?  Should it be in a different package?
     type string_list ;
@@ -117,7 +117,7 @@ package format is
 
 end package ;
 
-package body format is
+package body fmt is
 
     ---------------------------------------------------------------------------
     -- VHDL-2008 Generic Function

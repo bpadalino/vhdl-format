@@ -29,9 +29,9 @@ VHDL-2008 is required.
 Currently works with GHDL using the following commands:
 
 ```
-$ ghdl -a --std=08 format.vhd format_test.vhd
-$ ghdl -e --std=08 format_test
-$ ghdl -r --std=08 format_test
+$ ghdl -a --std=08 fmt.vhd fmt_test.vhd
+$ ghdl -e --std=08 fmt_test
+$ ghdl -r --std=08 fmt_test
 Tests:       10   Passed:       10   Failed:        0
 simulation stopped @0ms
 ```
