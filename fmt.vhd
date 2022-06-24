@@ -79,7 +79,7 @@ package fmt is
         class       =>  STR
     ) ;
 
-    function parse(fmt : string ; default_class : class_t := STR) return fmt_spec_t ;
+    function parse(sfmt : string ; default_class : class_t := STR) return fmt_spec_t ;
 
     -- Collapse align_t to be side (LEFT, RIGHT)
     function to_side(value : align_t) return side ;
@@ -95,60 +95,60 @@ package fmt is
     ---- Useful for custom enumerated types?
     --function f
     --    generic(type t; function to_string(x : t) return string is <>)
-    --    parameter(value : t ; fmt : string := "s")
+    --    parameter(value : t ; sfmt : string := "s")
     --    return string ;
 
     -- Format string building procedure using a string_list
     -- NOTE: Alias is not required, but might be helpful
-    procedure f(fmt : string ; variable args : inout string_list ; variable l : inout line) ;
+    procedure f(sfmt : string ; variable args : inout string_list ; variable l : inout line) ;
     alias fproc is f[string, string_list, line] ;
 
     -- Format string building function using up to 16 arguments
-    function f(fmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string ;
+    function f(sfmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string ;
     alias fpr is f[string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string return string] ;
 
     -- Single argument formatting
-    function f(fmt : string ; value : align_t) return string ;
-    function f(fmt : string ; value : bit) return string ;
-    function f(fmt : string ; value : bit_vector) return string ;
-    function f(fmt : string ; value : boolean) return string ;
-    function f(fmt : string ; value : class_t) return string ;
-    function f(fmt : string ; value : character) return string ;
-    function f(fmt : string ; value : integer) return string ;
-    function f(fmt : string ; value : real) return string ;
-    function f(fmt : string ; value : time) return string ;
+    function f(sfmt : string ; value : align_t) return string ;
+    function f(sfmt : string ; value : bit) return string ;
+    function f(sfmt : string ; value : bit_vector) return string ;
+    function f(sfmt : string ; value : boolean) return string ;
+    function f(sfmt : string ; value : class_t) return string ;
+    function f(sfmt : string ; value : character) return string ;
+    function f(sfmt : string ; value : integer) return string ;
+    function f(sfmt : string ; value : real) return string ;
+    function f(sfmt : string ; value : time) return string ;
 
     -- Functions to format standard types
     -- NOTE: Aliases are not required, but might be helpful
-    function f(value : bit ; fmt : string := "b") return string ;
+    function f(value : bit ; sfmt : string := "b") return string ;
     alias fbit is f[bit, string return string] ;
 
-    function f(value : bit_vector ; fmt : string := "b") return string ;
+    function f(value : bit_vector ; sfmt : string := "b") return string ;
     alias fbv is f[bit_vector, string return string] ;
 
-    function f(value : boolean ; fmt : string := "s") return string ;
+    function f(value : boolean ; sfmt : string := "s") return string ;
     alias fbool is f[boolean, string return string] ;
 
-    function f(value : character ; fmt : string := "c") return string ;
+    function f(value : character ; sfmt : string := "c") return string ;
     alias fchar is f[character, string return string] ;
 
-    function f(value : integer ; fmt : string := "d") return string ;
+    function f(value : integer ; sfmt : string := "d") return string ;
     alias fint is f[integer, string return string] ;
 
-    function f(value : real ; fmt : string := "f") return string ;
+    function f(value : real ; sfmt : string := "f") return string ;
     alias freal is f[real, string return string] ;
 
-    function f(value : align_t ; fmt : string := "s") return string ;
+    function f(value : align_t ; sfmt : string := "s") return string ;
     alias falign is f[align_t, string return string] ;
 
-    function f(value : class_t ; fmt : string := "s") return string ;
+    function f(value : class_t ; sfmt : string := "s") return string ;
     alias fclass is f[class_t, string return string] ;
 
     -- NOTE: Alias is helpful due to function overloading of string
-    function f(value : string ; fmt : string := "s") return string ;
+    function f(value : string ; sfmt : string := "s") return string ;
     alias fstr is f[string, string return string] ;
 
-    function f(value : time ; fmt : string := ".9t") return string ;
+    function f(value : time ; sfmt : string := ".9t") return string ;
     alias ftime is f[time, string return string] ;
 
 end package ;
@@ -160,16 +160,16 @@ package body fmt is
     ---------------------------------------------------------------------------
     --function f
     --    generic(type t; function to_string(x : t) return string is <>)
-    --    parameter(value : t ; fmt : string := "s")
+    --    parameter(value : t ; sfmt : string := "s")
     --    return string
     --is
     --begin
-    --    return fstr(to_string(value), fmt) ;
+    --    return fstr(to_string(value), sfmt) ;
     --end function ;
 
-    function parse(fmt : string ; default_class : class_t := STR) return fmt_spec_t is
+    function parse(sfmt : string ; default_class : class_t := STR) return fmt_spec_t is
         type fsm_t is (START, FILL, ALIGN, SIGN, WIDTH, DOT, PRECISION, CLASS, EXTRA) ;
-        alias fn                    : string(1 to fmt'length) is fmt ;
+        alias fn                    : string(1 to sfmt'length) is sfmt ;
         variable l                  : line          := null ;
         variable fsm                : fsm_t         := START ;
         variable rv                 : fmt_spec_t    := DEFAULT_FMT_SPEC ;
@@ -428,10 +428,10 @@ package body fmt is
         -- Parse the last bit of data
         case fsm is
             when WIDTH =>
-                l := new string'(fmt(numstart to numstop)) ;
+                l := new string'(sfmt(numstart to numstop)) ;
                 read(l, rv.width) ;
             when PRECISION =>
-                l := new string'(fmt(numstart to numstop)) ;
+                l := new string'(sfmt(numstart to numstop)) ;
                 read(l, rv.precision) ;
             when others =>
                 null ;
@@ -495,9 +495,9 @@ package body fmt is
         end loop ;
     end procedure ;
 
-    function f(value : string ; fmt : string := "s") return string is
+    function f(value : string ; sfmt : string := "s") return string is
         alias s             : string(1 to value'length) is value ;
-        variable fmt_spec   : fmt_spec_t := parse(fmt, STR) ;
+        variable fmt_spec   : fmt_spec_t := parse(sfmt, STR) ;
         variable l          : line ;
         variable fillcount  : natural ;
     begin
@@ -514,20 +514,20 @@ package body fmt is
         return l.all ;
     end function ;
 
-    function f(value : align_t ; fmt : string := "s") return string is
+    function f(value : align_t ; sfmt : string := "s") return string is
         constant s : string := align_t'image(value) ;
     begin
-        return fstr(s, fmt) ;
+        return fstr(s, sfmt) ;
     end function ;
 
-    function f(value : class_t ; fmt : string := "s") return string is
+    function f(value : class_t ; sfmt : string := "s") return string is
         constant s : string := class_t'image(value) ;
     begin
-        return fstr(s, fmt) ;
+        return fstr(s, sfmt) ;
     end function ;
 
-    function f(value : bit ; fmt : string := "b") return string is
-        variable fmt_spec   : fmt_spec_t := parse(fmt, BINARY) ;
+    function f(value : bit ; sfmt : string := "b") return string is
+        variable fmt_spec   : fmt_spec_t := parse(sfmt, BINARY) ;
         variable l          : line ;
         variable fillcount  : natural ;
     begin
@@ -539,8 +539,8 @@ package body fmt is
         return l.all ;
     end function ;
 
-    function f(value : bit_vector ; fmt : string := "b") return string is
-        variable fmt_spec   : fmt_spec_t := parse(fmt, BINARY) ;
+    function f(value : bit_vector ; sfmt : string := "b") return string is
+        variable fmt_spec   : fmt_spec_t := parse(sfmt, BINARY) ;
         variable l          : line ;
         variable fillcount  : natural ;
     begin
@@ -563,8 +563,8 @@ package body fmt is
         return l.all ;
     end function ;
 
-    function f(value : boolean ; fmt : string := "s") return string is
-        variable fmt_spec   : fmt_spec_t := parse(fmt, BINARY) ;
+    function f(value : boolean ; sfmt : string := "s") return string is
+        variable fmt_spec   : fmt_spec_t := parse(sfmt, BINARY) ;
         variable l          : line ;
         variable fillcount  : natural ;
     begin
@@ -576,8 +576,8 @@ package body fmt is
         return l.all ;
     end function ;
 
-    function f(value : character ; fmt : string := "c") return string is
-        variable fmt_spec   : fmt_spec_t := parse(fmt, CHAR) ;
+    function f(value : character ; sfmt : string := "c") return string is
+        variable fmt_spec   : fmt_spec_t := parse(sfmt, CHAR) ;
         variable l          : line ;
         variable fillcount  : natural ;
     begin
@@ -589,8 +589,8 @@ package body fmt is
         return l.all ;
     end function ;
 
-    function f(value : time ; fmt : string := ".9t" ) return string is
-        variable fmt_spec   : fmt_spec_t := parse(fmt, TIMEVAL) ;
+    function f(value : time ; sfmt : string := ".9t" ) return string is
+        variable fmt_spec   : fmt_spec_t := parse(sfmt, TIMEVAL) ;
         variable l          : line ;
         variable unit       : time := 1 ns ;
         variable fillcount  : natural ;
@@ -623,8 +623,8 @@ package body fmt is
         l(idx-1) := s ;
     end procedure ;
 
-    function f(value : integer ; fmt : string := "d") return string is
-        variable fmt_spec   : fmt_spec_t    := parse(fmt, INT) ;
+    function f(value : integer ; sfmt : string := "d") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, INT) ;
         variable l          : line          := null ;
         variable temp       : line          := null ;
         variable fillcount  : natural       := 0 ;
@@ -662,11 +662,11 @@ package body fmt is
         end if ;
         --case fmt_spec.class is
         --    when BINARY =>
-        --        return f(ieee.std_logic_1164.std_logic_vector(ieee.numeric_std.to_unsigned(value, fmt_spec.width)), fmt) ;
+        --        return f(ieee.std_logic_1164.std_logic_vector(ieee.numeric_std.to_unsigned(value, fmt_spec.width)), sfmt) ;
         --    when OCTAL =>
-        --        return f(ieee.std_logic_1164.std_logic_vector(ieee.numeric_std.to_unsigned(value, fmt_spec.width*3)), fmt) ;
+        --        return f(ieee.std_logic_1164.std_logic_vector(ieee.numeric_std.to_unsigned(value, fmt_spec.width*3)), sfmt) ;
         --    when HEX =>
-        --        return f(ieee.std_logic_1164.std_logic_vector(ieee.numeric_std.to_unsigned(value, fmt_spec.width*4)), fmt) ;
+        --        return f(ieee.std_logic_1164.std_logic_vector(ieee.numeric_std.to_unsigned(value, fmt_spec.width*4)), sfmt) ;
         --    when INT|UINT =>
         --        write(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
         --    when others =>
@@ -676,8 +676,8 @@ package body fmt is
         return l.all ;
     end function ;
 
-    function f(value : real ; fmt : string := "f") return string is
-        variable fmt_spec   : fmt_spec_t    := parse(fmt, FLOAT_FIXED) ;
+    function f(value : real ; sfmt : string := "f") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, FLOAT_FIXED) ;
         variable l          : line          := null ;
         variable exp        : line          := null ;
         variable precision  : line          := null ;
@@ -688,7 +688,7 @@ package body fmt is
     begin
         if fmt_spec.class = INT then
             -- Cast to an integer
-            return f(integer(value), fmt) ;
+            return f(integer(value), sfmt) ;
         elsif fmt_spec.class = FLOAT_EXP then
             -- Limit the precision first so things round correctly
             write(exp, value, left, fmt_spec.width, 0) ;
@@ -853,8 +853,8 @@ package body fmt is
         end loop ;
     end procedure ;
 
-    procedure reformat(l : inout line ; fmt : string) is
-        variable fmt_spec   : fmt_spec_t    := parse(fmt) ;
+    procedure reformat(l : inout line ; sfmt : string) is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt) ;
         variable newl       : line          := null ;
         variable real_arg   : real          := 0.0 ;
         variable int_arg    : integer       := 0 ;
@@ -868,7 +868,7 @@ package body fmt is
                     report fpr("Could not reformat argument as integer: {}", l.all)
                         severity warning ;
                 end if ;
-                newl := new string'(f(int_arg, fmt)) ;
+                newl := new string'(f(int_arg, sfmt)) ;
 
             when FLOAT_EXP|FLOAT_FIXED =>
                 read(l, real_arg, good) ;
@@ -876,10 +876,10 @@ package body fmt is
                     report fpr("Could not reformat argument as float: {}", l.all)
                         severity warning ;
                 end if ;
-                newl := new string'(f(real_arg, fmt)) ;
+                newl := new string'(f(real_arg, sfmt)) ;
 
             when STR =>
-                newl := new string'(fstr(l.all, fmt)) ;
+                newl := new string'(fstr(l.all, sfmt)) ;
 
             when TIMEVAL =>
                 read(l, time_arg, good) ;
@@ -887,11 +887,11 @@ package body fmt is
                     report fpr("Could not reformat argument as time: {}", l.all)
                         severity warning ;
                 end if ;
-                newl := new string'(f(time_arg, fmt)) ;
+                newl := new string'(f(time_arg, sfmt)) ;
 
             when others =>
-                report fpr("Unknown format to reformat, using string: {}", fmt) ;
-                newl := new string'(fstr(l.all, fmt)) ;
+                report fpr("Unknown format to reformat, using string: {}", sfmt) ;
+                newl := new string'(fstr(l.all, sfmt)) ;
         end case ;
         l := newl ;
     end procedure ;
@@ -1122,9 +1122,9 @@ package body fmt is
         end if ;
     end procedure ;
 
-    function f(fmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string is
+    function f(sfmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string is
         -- Normalize the format string
-        alias fn        : string(1 to fmt'length) is fmt ;
+        alias fn        : string(1 to sfmt'length) is sfmt ;
 
         -- Arguments and parts of the strings to put together
         variable args   : string_list ;
@@ -1178,8 +1178,8 @@ package body fmt is
         return l.all ;
     end function ;
 
-    procedure f(fmt : string ; variable args : inout string_list ; variable l : inout line) is
-        alias fn        : string(1 to fmt'length) is fmt ;
+    procedure f(sfmt : string ; variable args : inout string_list ; variable l : inout line) is
+        alias fn        : string(1 to sfmt'length) is sfmt ;
         variable parts  : string_list ;
     begin
         -- Zero length format string short circuit
@@ -1198,49 +1198,49 @@ package body fmt is
     end procedure ;
 
     -- Single argument formatters
-    function f(fmt : string ; value : align_t) return string is
+    function f(sfmt : string ; value : align_t) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : bit) return string is
+    function f(sfmt : string ; value : bit) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : bit_vector) return string is
+    function f(sfmt : string ; value : bit_vector) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : boolean) return string is
+    function f(sfmt : string ; value : boolean) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : character) return string is
+    function f(sfmt : string ; value : character) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : class_t) return string is
+    function f(sfmt : string ; value : class_t) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : integer) return string is
+    function f(sfmt : string ; value : integer) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : real) return string is
+    function f(sfmt : string ; value : real) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
-    function f(fmt : string ; value : time) return string is
+    function f(sfmt : string ; value : time) return string is
     begin
-        return fpr(fmt, f(value)) ;
+        return fpr(sfmt, f(value)) ;
     end function ;
 
 end package body ;
