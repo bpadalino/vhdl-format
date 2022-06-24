@@ -566,9 +566,25 @@ package body fmt is
     function f(value : boolean ; sfmt : string := "s") return string is
         variable fmt_spec   : fmt_spec_t := parse(sfmt, BINARY) ;
         variable l          : line ;
+        variable bit_arg    : bit := '0' ;
         variable fillcount  : natural ;
     begin
-        write(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+        case fmt_spec.class is
+            when STR =>
+                write(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+
+            when BINARY =>
+                if value = true then
+                    bit_arg := '1' ;
+                end if ;
+                l := new string'(f(bit_arg, sfmt)) ;
+                return l.all ;
+
+            when others =>
+                report fstr("Unsupported class for boolean - {}, using STR", f(fmt_spec.class))
+                    severity warning ;
+                write(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+        end case ;
         fill(l, fmt_spec, fillcount) ;
         if fmt_spec.align = CENTERED then
             shift(l, fillcount/2) ;
@@ -854,14 +870,37 @@ package body fmt is
     end procedure ;
 
     procedure reformat(l : inout line ; sfmt : string) is
+        type bit_vector_ptr is access bit_vector ;
         variable fmt_spec   : fmt_spec_t    := parse(sfmt) ;
         variable newl       : line          := null ;
-        variable real_arg   : real          := 0.0 ;
+        variable bit_arg    : bit           := '0' ;
+        variable bv_ptr     : bit_vector_ptr:= null ;
         variable int_arg    : integer       := 0 ;
+        variable real_arg   : real          := 0.0 ;
         variable time_arg   : time          := 0 ns ;
         variable good       : boolean       := false ;
     begin
         case fmt_spec.class is
+            when BINARY|HEX|OCTAL =>
+                if l'length = 1 then
+                    -- Length is just a single bit
+                    read(l, bit_arg, good) ;
+                    if good = false then
+                        report fpr("Could not reformat argument as bit: {}", l.all)
+                            severity warning ;
+                    end if ;
+                    newl := new string'(f(bit_arg, sfmt)) ;
+                else
+                    -- Always read in binary
+                    bv_ptr := new bit_vector(0 to l'length-1) ;
+                    bread(l, bv_ptr.all, good) ;
+                    if good = false then
+                        report fpr("Could not reformat argument as binary bit_vector: {}", l.all)
+                            severity warning ;
+                    end if ;
+                    newl := new string'(fbv(bv_ptr.all, sfmt)) ;
+                end if ;
+
             when INT|UINT =>
                 read(l, int_arg, good) ;
                 if good = false then

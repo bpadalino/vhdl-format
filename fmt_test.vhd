@@ -81,11 +81,13 @@ begin
 
     test : process
         type lines_t is array(positive range <>) of line ;
+        type bit_vector_ptr is access bit_vector ;
         file fin            :   text ;
         variable fstatus    :   file_open_status ;
         variable l          :   line ;
         variable ll         :   line ;
         variable bit_arg    :   bit ;
+        variable bv_ptr     :   bit_vector_ptr ;
         variable bool_arg   :   boolean ;
         variable char_arg   :   character ;
         variable int_arg    :   integer ;
@@ -159,25 +161,122 @@ begin
 
             -- Process the different commands
             -------------------------------------------------------------------
-            -- fbit
+            -- fb
             -------------------------------------------------------------------
-
-            -------------------------------------------------------------------
-            -- fbool
-            -------------------------------------------------------------------
+            if cmd.all = "fb" then
+                read(args(1), bit_arg, good) ;
+                if good = false then
+                    report fpr("Invalid bit argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(fmt.all, bit_arg)) ;
+                else
+                    report "fb command requires a format string, none given"
+                        severity warning ;
+                    result := new string'("") ;
+                end if ;
 
             -------------------------------------------------------------------
             -- fbv
             -------------------------------------------------------------------
+            elsif cmd.all = "fbv" then
+                bv_ptr := new bit_vector(0 to args(1)'length-1) ;
+                bread(args(1), bv_ptr.all, good) ;
+                if good = false then
+                    report fpr("Invalid bit_vector argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(fmt.all, bv_ptr.all)) ;
+                else
+                    report "fbv command requires a format string, none given"
+                        severity warning ;
+                    result := new string'("") ;
+                end if ;
+
+            -------------------------------------------------------------------
+            -- fbit
+            -------------------------------------------------------------------
+            elsif cmd.all = "fbit" then
+                read(args(1), bit_arg, good) ;
+                if good = false then
+                    report fpr("Invalid bit argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(bit_arg, fmt.all)) ;
+                else
+                    result := new string'(f(bit_arg)) ;
+                end if ;
+
+            -------------------------------------------------------------------
+            -- fbitvector
+            -------------------------------------------------------------------
+            elsif cmd.all = "fbitvector" then
+                bv_ptr := new bit_vector(0 to l'length-1) ;
+                read(args(1), bv_ptr.all, good) ;
+                if good = false then
+                    report fpr("Invalid bit_vector argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(bv_ptr.all, fmt.all)) ;
+                else
+                    result := new string'(f(bv_ptr.all)) ;
+                end if ;
+
+            -------------------------------------------------------------------
+            -- fbool
+            -------------------------------------------------------------------
+            elsif cmd.all = "fbool" then
+                read(args(1), bool_arg, good) ;
+                if good = false then
+                    report fpr("Invalid bool argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(fmt.all, bool_arg)) ;
+                else
+                    report "fbool command requires a format string, none given"
+                        severity warning ;
+                    result := new string'("") ;
+                end if ;
+
+            -------------------------------------------------------------------
+            -- fboolean
+            -------------------------------------------------------------------
+            elsif cmd.all = "fboolean" then
+                read(args(1), bool_arg, good) ;
+                if good = false then
+                    report fpr("Invalid bool argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(bool_arg, fmt.all)) ;
+                else
+                    result := new string'(f(bool_arg)) ;
+                end if ;
 
             -------------------------------------------------------------------
             -- fchar
             -------------------------------------------------------------------
+            elsif cmd.all = "fchar" then
+                read(args(1), char_arg, good) ;
+                if good = false then
+                    report fpr("Invalid character argument: {}", args(1).all)
+                        severity warning ;
+                end if ;
+                if fmt'length > 0 then
+                    result := new string'(f(char_arg, fmt.all)) ;
+                else
+                    result := new string'(f(char_arg)) ;
+                end if ;
 
             -------------------------------------------------------------------
             -- fi
             -------------------------------------------------------------------
-            if cmd.all = "fi" then
+            elsif cmd.all = "fi" then
                 read(args(1), int_arg, good) ;
                 if good = false then
                     report fpr("Invalid integer argument: {}", args(1).all)
@@ -235,9 +334,9 @@ begin
                         severity warning ;
                 end if ;
                 if fmt'length > 0 then
-                    result := new string'(fint(int_arg, fmt.all)) ;
+                    result := new string'(f(int_arg, fmt.all)) ;
                 else
-                    result := new string'(fint(int_arg)) ;
+                    result := new string'(f(int_arg)) ;
                 end if ;
 
             -------------------------------------------------------------------
@@ -424,15 +523,17 @@ begin
             -- fproc
             -------------------------------------------------------------------
             elsif cmd.all = "fproc" then
+                -- Clear the args_list
                 clear(args_list) ;
+
+                -- Add the args to the args_list
                 for idx in 2 to len-1-1 loop
                     get(lines, idx, l) ;
                     append(args_list, l.all) ;
                 end loop ;
-                --for i in 1 to num_args loop
-                --    append(args_list, args(i).all) ;
-                --end loop ;
-                fproc(fmt.all, args_list, result) ;
+
+                -- Format
+                f(fmt.all, args_list, result) ;
 
             -------------------------------------------------------------------
             -- freal
@@ -444,22 +545,10 @@ begin
                         severity warning ;
                 end if ;
                 if fmt'length > 0 then
-                    result := new string'(freal(real_arg, fmt.all)) ;
+                    result := new string'(f(real_arg, fmt.all)) ;
                 else
-                    result := new string'(freal(real_arg)) ;
+                    result := new string'(f(real_arg)) ;
                 end if ;
-
-            -------------------------------------------------------------------
-            -- fsfixed
-            -------------------------------------------------------------------
-
-            -------------------------------------------------------------------
-            -- fsigned
-            -------------------------------------------------------------------
-
-            -------------------------------------------------------------------
-            -- fslv
-            -------------------------------------------------------------------
 
             -------------------------------------------------------------------
             -- fstr
@@ -481,18 +570,10 @@ begin
                         severity warning ;
                     end if ;
                 if fmt'length > 0 then
-                    result := new string'(ftime(time_arg, fmt.all)) ;
+                    result := new string'(f(time_arg, fmt.all)) ;
                 else
-                    result := new string'(ftime(time_arg)) ;
+                    result := new string'(f(time_arg)) ;
                 end if ;
-
-            -------------------------------------------------------------------
-            -- fufixed
-            -------------------------------------------------------------------
-
-            -------------------------------------------------------------------
-            -- funsigned
-            -------------------------------------------------------------------
 
             -------------------------------------------------------------------
             -- Unknown command
