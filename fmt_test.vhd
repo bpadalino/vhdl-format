@@ -8,7 +8,7 @@ library work ;
 
 entity fmt_test is
   generic (
-    FNAME   :   string := "./vectors/format_test_vectors.txt"
+    FILEPATH    :   string := "./vectors/format_test_vectors.txt"
   ) ;
 end entity ;
 
@@ -63,8 +63,6 @@ architecture arch of fmt_test is
         end loop ;
     end procedure ;
 
-    constant ENDL : string := ( CR & LF ) ;
-
     -- Define the custom type
     type state_t is (IDLE, CHECKING, FOO, BAR) ;
     signal state : state_t := CHECKING ;
@@ -110,7 +108,7 @@ begin
         variable args_list  :   string_list ;
     begin
         -- Open the test file
-        file_open(fin, FNAME, READ_MODE) ;
+        file_open(fin, FILEPATH, READ_MODE) ;
 
         -- Read the line and parse
         while not endfile(fin) loop
@@ -610,7 +608,7 @@ begin
         end loop ;
 
         -- Final report
-        write(output, f("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}" & ENDL, f(tests), f(tests-failed), f(failed))) ;
+        write(output, f("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}" & LF, f(tests), f(tests-failed), f(failed))) ;
 
         -- Close the test file
         file_close(fin) ;
