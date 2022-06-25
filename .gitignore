@@ -1,1 +1,3 @@
 *.cf
+*.o
+fmt_test
