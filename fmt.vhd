@@ -257,7 +257,7 @@ package body fmt is
 
                             when others =>
                                 case fn(idx+1) is
-                                    when '<'|'>'|'^'|'=' =>
+                                    when '<'|'>'|'^'|'='|'0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9' =>
                                         -- Alignment character is second, so fill character is first
                                         fsm := FILL ;
 
@@ -485,16 +485,23 @@ package body fmt is
         alias s             : string(1 to value'length) is value ;
         variable fmt_spec   : fmt_spec_t := parse(sfmt, STR) ;
         variable l          : line ;
-        variable fillcount  : natural ;
+        variable fillcount  : integer := fmt_spec.width - value'length ;
+        constant static_fill : string(1 to fillcount) := (others => fmt_spec.fill) ;
     begin
         if (fmt_spec.precision > 0) and (value'length > fmt_spec.precision) then
             -- Limiting the string size based on precision
             return s(1 to fmt_spec.precision) ;
         else
-            write(l, s, to_side(fmt_spec.align), fmt_spec.width) ;
+            -- The string might have spaces included, so lets create
+            fillcount := fmt_spec.width - value'length ;
+            case fmt_spec.align is
+                when LEFT|CENTERED =>
+                    write(l, s & static_fill, to_side(fmt_spec.align)) ;
+                when others =>
+                    write(l, static_fill & s, to_side(fmt_spec.align)) ;
+            end case ;
         end if ;
-        fill(l, fmt_spec, fillcount) ;
-        if fmt_spec.align = CENTERED then
+        if fillcount > 0 and fmt_spec.align = CENTERED then
             shift(l, fillcount/2) ;
         end if ;
         return l.all ;
@@ -688,6 +695,7 @@ package body fmt is
         variable fillcount  : natural       := 0 ;
         variable sign       : character ;
         variable prec       : real ;
+        variable expstart   : positive      := 1 ;
     begin
         if fmt_spec.class = INT then
             -- Cast to an integer
@@ -699,6 +707,14 @@ package body fmt is
             else
                 write(exp, value, left, fmt_spec.width, 0) ;
             end if ;
+            -- Find expstart
+            while expstart < exp'length and exp(expstart) /= 'e' and exp(expstart) /= 'E' loop
+                expstart := expstart + 1 ;
+            end loop ;
+            if expstart = exp'length then
+                expstart := exp'length + 1 ;
+            end if ;
+
             -- Precision is just for digits, not for sign
             prec := abs(value) ;
 
@@ -714,15 +730,15 @@ package body fmt is
             -- ... now concatenate the info from exp and precision into the full string
             if fmt_spec.precision > 0 then
                 if value < 0.0 and fmt_spec.align /= SIGN_EDGE then
-                    l := new string'(exp(1 to 3) & precision(3 to 3+fmt_spec.precision-1) & exp(10 to 13)) ;
+                    l := new string'(exp(1 to 3) & precision(3 to 3+fmt_spec.precision-1) & exp(expstart to exp'high)) ;
                 else
-                    l := new string'(exp(1 to 2) & precision(3 to 3+fmt_spec.precision-1) & exp(9 to 12)) ;
+                    l := new string'(exp(1 to 2) & precision(3 to 3+fmt_spec.precision-1) & exp(expstart to exp'high)) ;
                 end if ;
             else
                 if value < 0.0 and fmt_spec.align /= SIGN_EDGE then
-                    l := new string'(exp(1 to 2) & exp(10 to 13)) ;
+                    l := new string'(exp(1 to 2) & exp(expstart to exp'high)) ;
                 else
-                    l := new string'(exp(1 to 1) & exp(9 to 12)) ;
+                    l := new string'(exp(1 to 1) & exp(expstart to exp'high)) ;
                 end if ;
             end if ;
             -- Justify the string that is left justified
