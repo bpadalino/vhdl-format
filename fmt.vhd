@@ -460,10 +460,6 @@ package body fmt is
         variable idx : integer ;
     begin
         fillcount := 0 ;
-        if fmt_spec.fill = ' ' then
-            -- Nothing to fill since ' ' is default
-            return ;
-        end if ;
         case fmt_spec.align is
             when RIGHT|SIGN_EDGE =>
                 -- Start on the left side to fill in
@@ -691,23 +687,55 @@ package body fmt is
         variable tempreal   : real          := 0.0 ;
         variable fillcount  : natural       := 0 ;
         variable sign       : character ;
+        variable prec       : real ;
     begin
         if fmt_spec.class = INT then
             -- Cast to an integer
             return f(integer(value), sfmt) ;
         elsif fmt_spec.class = FLOAT_EXP then
             -- Limit the precision first so things round correctly
-            write(exp, value, left, fmt_spec.width, 0) ;
-            -- Get the rounded value
-            write(precision, 1.0+value-real(integer((value))), left, 0, fmt_spec.precision);
+            if fmt_spec.align = SIGN_EDGE then
+                write(exp, abs(value), left, fmt_spec.width, 0) ;
+            else
+                write(exp, value, left, fmt_spec.width, 0) ;
+            end if ;
+            -- Precision is just for digits, not for sign
+            prec := abs(value) ;
+
+            -- Make sure we're going to get the right decimal points
+            while prec > 10.0 loop
+                prec := prec / 10.0 ;
+            end loop ;
+            -- Make sure we are e+00
+            if abs(prec) < 0.1 then
+                prec := 1.0 + prec ;
+            end if ;
+            write(precision, prec, left, 0, fmt_spec.precision);
             -- ... now concatenate the info from exp and precision into the full string
             if fmt_spec.precision > 0 then
-                l := new string'(exp(1 to 2) & precision(3 to 3+fmt_spec.precision-1) & exp(9 to exp'high)) ;
+                if value < 0.0 and fmt_spec.align /= SIGN_EDGE then
+                    l := new string'(exp(1 to 3) & precision(3 to 3+fmt_spec.precision-1) & exp(10 to 13)) ;
+                else
+                    l := new string'(exp(1 to 2) & precision(3 to 3+fmt_spec.precision-1) & exp(9 to 12)) ;
+                end if ;
             else
-                l := new string'(exp(1 to 1) & exp(9 to exp'high)) ;
+                if value < 0.0 and fmt_spec.align /= SIGN_EDGE then
+                    l := new string'(exp(1 to 2) & exp(10 to 13)) ;
+                else
+                    l := new string'(exp(1 to 1) & exp(9 to 12)) ;
+                end if ;
             end if ;
+            -- Justify the string that is left justified
+            write(temp, l.all, to_side(fmt_spec.align), fmt_spec.width) ;
+            l := temp ;
+            temp := null ;
         elsif fmt_spec.class = FLOAT_FIXED then
-            write(l, value, to_side(fmt_spec.align), fmt_spec.width, fmt_spec.precision) ;
+            if fmt_spec.align = SIGN_EDGE then
+                -- Don't write the sign since SIGN_EDGE formatting down lower takes care of it
+                write(l, abs(value), to_side(fmt_spec.align), fmt_spec.width, fmt_spec.precision) ;
+            else
+                write(l, value, to_side(fmt_spec.align), fmt_spec.width, fmt_spec.precision) ;
+            end if ;
         end if ;
 
         if value < 0.0 then
@@ -725,15 +753,15 @@ package body fmt is
                     report "Format alignment set to SIGN_EDGE without SIGN - assuming SIGN"
                         severity warning ;
                 end if ;
-                if (l(1) /= fmt_spec.fill) or (fmt_spec.width = 0) then
+                if fillcount = 0 then
                     write(temp, l.all, right, l'length+1) ;
                     l := temp ;
                 end if ;
                 l(1) := sign ;
 
             when LEFT|CENTERED =>
-                if fmt_spec.sign = true then
-                    if (l(l'length) /= fmt_spec.fill) then
+                if not (value < 0.0) and fmt_spec.sign = true then
+                    if fillcount = 0 then
                         -- Full number in line, but we need room for the sign, so extend by 1
                         write(temp, l.all, left, l'length+1) ;
                         l := temp ;
@@ -752,12 +780,15 @@ package body fmt is
 
             when RIGHT =>
                 if fmt_spec.sign = true then
-                    if (l(1) /= fmt_spec.fill) then
+                    if fillcount = 0 then
                         -- Full number in line, but we need room for the sign, so extend by 1
                         write(temp, l.all, right, l'length+1) ;
+                        l := temp ;
                     end if ;
                     -- Add the sign
-                    add_sign(l, sign, fmt_spec.fill) ;
+                    if not (value < 0.0) then
+                        add_sign(l, sign, fmt_spec.fill) ;
+                    end if ;
                 end if ;
 
             when others =>
