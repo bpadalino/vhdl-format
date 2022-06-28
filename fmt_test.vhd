@@ -608,7 +608,7 @@ begin
         end loop ;
 
         -- Final report
-        write(output, f("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}" & LF, f(tests), f(tests-failed), f(failed))) ;
+        write(output, fpr("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}" & LF, f(tests), f(tests-failed), f(failed))) ;
 
         -- Close the test file
         file_close(fin) ;

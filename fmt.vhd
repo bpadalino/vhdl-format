@@ -29,7 +29,6 @@ package fmt is
     end record ;
 
     -- Procedures for manipulating string_list
-    procedure init(variable list : inout string_list) ;
     procedure append(variable list : inout string_list ; s : string) ;
     procedure clear(variable list : inout string_list) ;
     procedure get(variable list : in string_list ; index : integer ; variable l : out line) ;
@@ -99,9 +98,7 @@ package fmt is
     --    return string ;
 
     -- Format string building procedure using a string_list
-    -- NOTE: Alias is not required, but might be helpful
     procedure f(sfmt : string ; variable args : inout string_list ; variable l : inout line) ;
-    alias fproc is f[string, string_list, line] ;
 
     -- Format string building function using up to 16 arguments
     function f(sfmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string ;
@@ -119,7 +116,7 @@ package fmt is
     function f(sfmt : string ; value : time) return string ;
 
     -- Functions to format standard types
-    -- NOTE: Aliases are not required, but might be helpful
+    -- NOTE: Aliases added for ambiguous types
     function f(value : bit ; sfmt : string := "b") return string ;
     alias fbit is f[bit, string return string] ;
 
@@ -127,29 +124,22 @@ package fmt is
     alias fbv is f[bit_vector, string return string] ;
 
     function f(value : boolean ; sfmt : string := "s") return string ;
-    alias fbool is f[boolean, string return string] ;
 
     function f(value : character ; sfmt : string := "c") return string ;
     alias fchar is f[character, string return string] ;
 
     function f(value : integer ; sfmt : string := "d") return string ;
-    alias fint is f[integer, string return string] ;
 
     function f(value : real ; sfmt : string := "f") return string ;
-    alias freal is f[real, string return string] ;
 
     function f(value : align_t ; sfmt : string := "s") return string ;
-    alias falign is f[align_t, string return string] ;
 
     function f(value : class_t ; sfmt : string := "s") return string ;
-    alias fclass is f[class_t, string return string] ;
 
-    -- NOTE: Alias is helpful due to function overloading of string
     function f(value : string ; sfmt : string := "s") return string ;
     alias fstr is f[string, string return string] ;
 
     function f(value : time ; sfmt : string := ".9t") return string ;
-    alias ftime is f[time, string return string] ;
 
 end package ;
 
@@ -778,15 +768,6 @@ package body fmt is
         return l.all ;
     end function ;
 
-    -- Initialization of list
-    -- NOTE: Unsure if the LRM says access types are always null and
-    -- natural are always 'low?
-    procedure init(variable list : inout string_list) is
-    begin
-        list.root   := null ;
-        list.length := 0 ;
-    end procedure ;
-
     procedure append(variable list : inout string_list ; s : string) is
         variable l          : line                  := new string'(s) ;
         variable new_item   : string_list_item_ptr  := new string_list_item ;
@@ -869,70 +850,146 @@ package body fmt is
         end loop ;
     end procedure ;
 
-    procedure reformat(l : inout line ; sfmt : string) is
-        type bit_vector_ptr is access bit_vector ;
-        variable fmt_spec   : fmt_spec_t    := parse(sfmt) ;
-        variable newl       : line          := null ;
-        variable bit_arg    : bit           := '0' ;
-        variable bv_ptr     : bit_vector_ptr:= null ;
-        variable int_arg    : integer       := 0 ;
-        variable real_arg   : real          := 0.0 ;
-        variable time_arg   : time          := 0 ns ;
-        variable good       : boolean       := false ;
+    procedure reformat(variable l : inout line ; sfmt : in string) is
+        type bv_ptr is access bit_vector ;
+        constant fmt_spec       : fmt_spec_t := parse(sfmt) ;
+        variable good           : boolean ;
+        variable bit_arg        : bit ;
+        variable bv_arg_ptr     : bv_ptr ;
+        variable boolean_arg    : boolean ;
+        variable integer_arg    : integer ;
+        variable real_arg       : real ;
+        variable time_arg       : time ;
+        variable strl           : line := l ;
     begin
         case fmt_spec.class is
-            when BINARY|HEX|OCTAL =>
-                if l'length = 1 then
-                    -- Length is just a single bit
-                    read(l, bit_arg, good) ;
-                    if good = false then
-                        report fpr("Could not reformat argument as bit: {}", l.all)
-                            severity warning ;
+            when STR =>
+                -- Just strings that need to be put into the actual format
+                l := new string'(fstr(strl.all, sfmt)) ;
+
+            when BINARY =>
+                -- boolean, bit, bit_vector, or integer could be the source for this
+                -- Try boolean: true|false
+                read(strl, boolean_arg, good) ;
+                if good = true then
+                    if sfmt'length > 0 then
+                        l := new string'(f(boolean_arg, sfmt)) ;
+                    else
+                        l := strl ;
                     end if ;
-                    newl := new string'(f(bit_arg, sfmt)) ;
+                end if;
+
+                -- Try bit_vector
+                if good = false then
+                    bv_arg_ptr := new bit_vector(0 to strl'length-1) ;
+                    read(strl, bv_arg_ptr.all, good) ;
+                    if good = true then
+                        if sfmt'length > 0 then
+                            l := new string'(f(bv_arg_ptr.all, sfmt)) ;
+                        else
+                            l := strl ;
+                        end if ;
+                    end if ;
+                end if ;
+
+                -- Try integer: note integer might be read, but actually bit_vector, so ambiguous should be noted
+                if good = false then
+                    read(strl, integer_arg, good) ;
+                    if good = true then
+                        if sfmt'length > 0 then
+                            l := new string'(f(integer_arg, sfmt)) ;
+                        else
+                            l := strl ;
+                        end if ;
+                    end if ;
+                end if ;
+
+                -- Never parsed it so warn
+                if good = false then
+                    report fpr("Could not parse '{}' as BINARY", strl.all)
+                    severity warning ;
+                end if ;
+
+            when OCTAL|HEX =>
+                -- Try bit_vector
+                bv_arg_ptr := new bit_vector(0 to strl'length-1) ;
+                read(strl, bv_arg_ptr.all, good) ;
+                if good = true then
+                    if sfmt'length > 0 then
+                        l := new string'(f(bv_arg_ptr.all, sfmt)) ;
+                    else
+                        l := strl ;
+                    end if ;
+                end if ;
+
+                if good = false then
+                    -- Try integer
+                    read(strl, integer_arg, good) ;
+                    if good = true then
+                        if sfmt'length > 0 then
+                            l := new string'(f(integer_arg, sfmt)) ;
+                        else
+                            l := strl ;
+                        end if ;
+                    end if ;
+                end if ;
+
+                -- Never parsed it so warn
+                if good = false then
+                    report fpr("Could not parse '{}' as OCTAL or HEX", strl.all)
+                    severity warning ;
+                end if ;
+
+            when CHAR =>
+                if sfmt'length > 0 then
+                    l := new string'(f(strl(strl'low), sfmt)) ;
                 else
-                    -- Always read in binary
-                    bv_ptr := new bit_vector(0 to l'length-1) ;
-                    bread(l, bv_ptr.all, good) ;
-                    if good = false then
-                        report fpr("Could not reformat argument as binary bit_vector: {}", l.all)
-                            severity warning ;
-                    end if ;
-                    newl := new string'(fbv(bv_ptr.all, sfmt)) ;
+                    l := strl ;
                 end if ;
 
             when INT|UINT =>
-                read(l, int_arg, good) ;
+                -- Try integer
+                read(strl, integer_arg, good) ;
                 if good = false then
-                    report fpr("Could not reformat argument as integer: {}", l.all)
+                    report fpr("Invalid integer argument: {}", strl.all)
                         severity warning ;
                 end if ;
-                newl := new string'(f(int_arg, sfmt)) ;
+                if sfmt'length > 0 then
+                    l := new string'(f(integer_arg, sfmt)) ;
+                else
+                    l := strl ;
+                end if ;
+
+                -- Try bit_vector
 
             when FLOAT_EXP|FLOAT_FIXED =>
-                read(l, real_arg, good) ;
+                read(strl, real_arg, good) ;
                 if good = false then
-                    report fpr("Could not reformat argument as float: {}", l.all)
+                    report fpr("Invalid real argument: {}", strl.all)
                         severity warning ;
                 end if ;
-                newl := new string'(f(real_arg, sfmt)) ;
-
-            when STR =>
-                newl := new string'(fstr(l.all, sfmt)) ;
+                if sfmt'length > 0 then
+                    l := new string'(f(real_arg, sfmt)) ;
+                else
+                    l := strl ;
+                end if ;
 
             when TIMEVAL =>
-                read(l, time_arg, good) ;
+                read(strl, time_arg, good) ;
                 if good = false then
-                    report fpr("Could not reformat argument as time: {}", l.all)
+                    report fpr("Invalid time argument: {}", strl.all)
                         severity warning ;
                 end if ;
-                newl := new string'(f(time_arg, sfmt)) ;
+                if sfmt'length > 0 then
+                    l := new string'(f(time_arg, sfmt)) ;
+                else
+                    l := strl ;
+                end if ;
 
             when others =>
-                report fpr("Unknown format to reformat, using string: {}", sfmt) ;
-                newl := new string'(fstr(l.all, sfmt)) ;
+                report "Unknown type to reformat"
+                    severity warning ;
         end case ;
-        l := newl ;
     end procedure ;
 
     procedure create_parts(fn : string ; variable parts : inout string_list ; variable args : inout string_list) is
@@ -990,10 +1047,10 @@ package body fmt is
                         when '}' =>
                             -- {} so add the next argument to the piecs
 
-                            -- Add the next argument to the parts
+                            -- Check the length
                             length(args, len) ;
                             assert argnum <= len
-                                report f("Too many arguments given the list: {} > {}", f(argnum), f(len))
+                                report fpr("Too many arguments given the list: {} > {}", f(argnum), f(len))
                                     severity warning ;
                             if argnum_used = true then
                                 report fpr("Cannot mix argnum usage in format string: {} @ {}", fn, f(i)) ;
@@ -1002,6 +1059,8 @@ package body fmt is
                                 argnum_limited := argnum_limited + 1 ;
                                 argnum := len - 1 ;
                             end if ;
+
+                            -- Append the argument
                             get(args, argnum, l) ;
                             append(parts, l.all) ;
                             argnum := argnum + 1 ;
@@ -1054,16 +1113,20 @@ package body fmt is
                         when '}' =>
                             l := new string'(fn(numstart to numstop)) ;
                             read(l, argnum) ;
+
+                            -- Check the length
                             length(args, len) ;
+
                             assert argnum < len
-                                report f("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
+                                report fpr("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
                                 severity warning ;
 
                             if argnum >= len then
                                 argnum_limited := argnum_limited + 1 ;
                                 argnum := len - 1 ;
                             end if ;
-                            -- Append the argument
+
+                            -- Append the argument from the args string_list
                             get(args, argnum, l) ;
                             append(parts, l.all) ;
 
@@ -1079,9 +1142,12 @@ package body fmt is
                             -- Read the argnum, but go off to read and reformat the argument
                             l := new string'(fn(numstart to numstop)) ;
                             read(l, argnum) ;
+
+                            -- Check the length
                             length(args, len) ;
+
                             assert argnum < len
-                                report f("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
+                                report fpr("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
                                 severity warning ;
 
                             if argnum >= len then
@@ -1094,7 +1160,7 @@ package body fmt is
                             fmt_stop := i + 1 ;
 
                         when others =>
-                            report f("Invalid argument specifier ({}) at position {}", f(fn(i)), f(i))
+                            report fpr("Invalid argument specifier ({}) at position {}", f(fn(i)), f(i))
                                 severity warning ;
 
                     end case ;
@@ -1103,8 +1169,10 @@ package body fmt is
                     case fn(i) is
                         when '}' =>
                             -- End of the format so check argument numbers
+                            length(args, len) ;
+
                             assert argnum <= len
-                                report f("Too many arguments given the list: {} > {}", f(argnum), f(len))
+                                report fpr("Too many arguments given the list: {} > {}", f(argnum), f(len))
                                     severity warning ;
 
                             -- Keep track of the number of times we limit arguments
@@ -1116,7 +1184,7 @@ package body fmt is
                             -- Initial formatted argument now in l
                             get(args, argnum, l) ;
 
-                            -- Reformat l into the new formatted thing
+                            -- Reformat
                             reformat(l, fn(fmt_start to fmt_stop)) ;
 
                             -- Add the reformatted line to the argnums
@@ -1155,7 +1223,7 @@ package body fmt is
         if argnum_used = false then
             length(args, len) ;
             if argnum /= len then
-                report f("Extra arguments passed into format expression - passed {}, but used {}", f(len), f(argnum))
+                report fpr("Extra arguments passed into format expression - passed {}, but used {}", f(len), f(argnum))
                     severity warning ;
             end if ;
         end if ;
@@ -1170,7 +1238,7 @@ package body fmt is
         variable parts  : string_list ;
 
         -- Concatenation line
-        variable l      : line          := null ;
+        variable l      : line  := null ;
 
         -- Add the arguments to the string_list only if the argument isn't null
         procedure add_args is
@@ -1203,17 +1271,13 @@ package body fmt is
             return "" ;
         end if ;
 
-        init(args) ;
-        init(parts) ;
-
         -- Set the arguments for the formatter
         add_args ;
 
-        -- Create parts to concatenate removing the formatting
-        create_parts(fn, parts, args) ;
+        -- Call into the one taking the string_list for args
+        f(sfmt, args, l) ;
 
-        -- Return the concatenated parts
-        concatenate_list(parts, l) ;
+        -- Return the string
         return l.all ;
     end function ;
 
@@ -1226,8 +1290,6 @@ package body fmt is
             l := new string'("") ;
             return ;
         end if ;
-
-        init(parts) ;
 
         -- Create parts to concatenate removing the formatting
         create_parts(fn, parts, args) ;
