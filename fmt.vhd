@@ -1,19 +1,154 @@
+-- Package: colors_p
+-- Description
+--  A package containing the strings for producing ANSI colored output on a
+--  terminal.
+
+package colors_p is
+    type colors_t is record
+        BLACK   :   string ;
+        RED     :   string ;
+        GREEN   :   string ;
+        YELLOW  :   string ;
+        BLUE    :   string ;
+        PURPLE  :   string ;
+        CYAN    :   string ;
+        WHITE   :   string ;
+    end record ;
+
+    type ansi_t is record
+        -- Foreground colors, typical
+        BLACK       :   string ;
+        RED         :   string ;
+        GREEN       :   string ;
+        YELLOW      :   string ;
+        BLUE        :   string ;
+        PURPLE      :   string ;
+        CYAN        :   string ;
+        WHITE       :   string ;
+
+        -- More styles
+        bold        :   colors_t ;
+        underline   :   colors_t ;
+        intense     :   colors_t ;
+        boldintense :   colors_t ;
+        -- Background colors
+        background  :   colors_t ;
+        intensebg   :   colors_t ;
+
+        -- Control sequence
+        RESET       :   string ;
+    end record ;
+
+    constant FOREGROUND_COLORS : colors_t := (
+        BLACK       =>  (ESC & "[30m"),
+        RED         =>  (ESC & "[31m"),
+        GREEN       =>  (ESC & "[32m"),
+        YELLOW      =>  (ESC & "[33m"),
+        BLUE        =>  (ESC & "[34m"),
+        PURPLE      =>  (ESC & "[35m"),
+        CYAN        =>  (ESC & "[36m"),
+        WHITE       =>  (ESC & "[37m")
+    ) ;
+
+    constant BOLD_COLORS : colors_t := (
+        BLACK       =>  (ESC & "[1;30m"),
+        RED         =>  (ESC & "[1;31m"),
+        GREEN       =>  (ESC & "[1;32m"),
+        YELLOW      =>  (ESC & "[1;33m"),
+        BLUE        =>  (ESC & "[1;34m"),
+        PURPLE      =>  (ESC & "[1;35m"),
+        CYAN        =>  (ESC & "[1;36m"),
+        WHITE       =>  (ESC & "[1;37m")
+    ) ;
+
+    constant UNDERLINE_COLORS : colors_t := (
+        BLACK       =>  (ESC & "[4;30m"),
+        RED         =>  (ESC & "[4;31m"),
+        GREEN       =>  (ESC & "[4;32m"),
+        YELLOW      =>  (ESC & "[4;33m"),
+        BLUE        =>  (ESC & "[4;34m"),
+        PURPLE      =>  (ESC & "[4;35m"),
+        CYAN        =>  (ESC & "[4;36m"),
+        WHITE       =>  (ESC & "[4;37m")
+    ) ;
+
+    constant BACKGROUND_COLORS : colors_t := (
+        BLACK       =>  (ESC & "[40m"),
+        RED         =>  (ESC & "[41m"),
+        GREEN       =>  (ESC & "[42m"),
+        YELLOW      =>  (ESC & "[43m"),
+        BLUE        =>  (ESC & "[44m"),
+        PURPLE      =>  (ESC & "[45m"),
+        CYAN        =>  (ESC & "[46m"),
+        WHITE       =>  (ESC & "[47m")
+    ) ;
+
+    constant INTENSE_COLORS : colors_t := (
+        BLACK       =>  (ESC & "[0;90m"),
+        RED         =>  (ESC & "[0;91m"),
+        GREEN       =>  (ESC & "[0;92m"),
+        YELLOW      =>  (ESC & "[0;93m"),
+        BLUE        =>  (ESC & "[0;94m"),
+        PURPLE      =>  (ESC & "[0;95m"),
+        CYAN        =>  (ESC & "[0;96m"),
+        WHITE       =>  (ESC & "[0;97m")
+    ) ;
+
+    constant BOLD_INTENSE_COLORS : colors_t := (
+        BLACK       =>  (ESC & "[1;90m"),
+        RED         =>  (ESC & "[1;91m"),
+        GREEN       =>  (ESC & "[1;92m"),
+        YELLOW      =>  (ESC & "[1;93m"),
+        BLUE        =>  (ESC & "[1;94m"),
+        PURPLE      =>  (ESC & "[1;95m"),
+        CYAN        =>  (ESC & "[1;96m"),
+        WHITE       =>  (ESC & "[1;97m")
+    ) ;
+
+
+    constant INTENSE_BACKGROUND_COLORS : colors_t := (
+        BLACK       =>  (ESC & "[0;100m"),
+        RED         =>  (ESC & "[0;101m"),
+        GREEN       =>  (ESC & "[0;102m"),
+        YELLOW      =>  (ESC & "[0;103m"),
+        BLUE        =>  (ESC & "[0;104m"),
+        PURPLE      =>  (ESC & "[0;105m"),
+        CYAN        =>  (ESC & "[0;106m"),
+        WHITE       =>  (ESC & "[0;107m")
+    ) ;
+
+    constant ansi   : ansi_t := (
+        BLACK       =>  FOREGROUND_COLORS.BLACK,
+        RED         =>  FOREGROUND_COLORS.RED,
+        GREEN       =>  FOREGROUND_COLORS.GREEN,
+        YELLOW      =>  FOREGROUND_COLORS.YELLOW,
+        BLUE        =>  FOREGROUND_COLORS.BLUE,
+        PURPLE      =>  FOREGROUND_COLORS.PURPLE,
+        CYAN        =>  FOREGROUND_COLORS.CYAN,
+        WHITE       =>  FOREGROUND_COLORS.WHITE,
+        bold        =>  BOLD_COLORS,
+        underline   =>  UNDERLINE_COLORS,
+        intense     =>  INTENSE_COLORS,
+        boldintense =>  BOLD_INTENSE_COLORS,
+        background  =>  BACKGROUND_COLORS,
+        intensebg   =>  INTENSE_BACKGROUND_COLORS,
+        RESET       =>  (ESC & "[0m")
+    ) ;
+
+end package ;
+
+-- Package: string_list_p
+-- Description
+--  A string_list is a dynamic array of strings which can efficiently be passed
+--  between procedures such that the string does not need to be the same length.
+-- NOTE
+--  In the future, I'd like this to be a generic list package.  If this is the
+--  case then string_list can just be an instantiation of the generic list.
+--  The only extra procedures to write are then sumlength and concatenate_list.
 use std.textio.line ;
-use std.textio.side ;
 
-use std.textio.read ;
-use std.textio.bread ;
-use std.textio.hread ;
-use std.textio.oread ;
+package string_list_p is
 
-use std.textio.write ;
-use std.textio.bwrite ;
-use std.textio.hwrite ;
-use std.textio.owrite ;
-
-package fmt is
-
-    -- TODO: Can this be a generic linked list?  Should it be in a different package?
     type string_list ;
     type string_list_item ;
     type string_list_item_ptr is access string_list_item ;
@@ -36,6 +171,219 @@ package fmt is
     procedure sumlength(variable list : string_list ; rv : out natural) ;
     procedure concatenate_list(variable parts : string_list ; variable rv : inout line) ;
 
+end package ;
+
+package body string_list_p is
+
+    procedure append(variable list : inout string_list ; s : string) is
+        variable l          : line                  := new string'(s) ;
+        variable new_item   : string_list_item_ptr  := new string_list_item ;
+        variable item       : string_list_item_ptr  := list.root ;
+    begin
+        new_item.str := l ;
+        new_item.next_item := null ;
+        if list.length = 0 then
+            list.root := new_item ;
+        else
+            while item.next_item /= null loop
+                item := item.next_item ;
+            end loop ;
+            item.next_item := new_item ;
+        end if ;
+        list.length := list.length + 1 ;
+    end procedure ;
+
+    procedure clear(variable list : inout string_list) is
+        variable item       : string_list_item_ptr := list.root ;
+        variable next_item  : string_list_item_ptr := null ;
+    begin
+        if item /= null then
+            next_item := item.next_item ;
+        end if ;
+        while item /= null loop
+            next_item := item.next_item ;
+            deallocate(item) ;
+            item := next_item ;
+        end loop ;
+        list.root := null ;
+        list.length := 0 ;
+    end procedure ;
+
+    procedure get(variable list : in string_list ; index : integer ; variable l : out line) is
+        variable item : string_list_item_ptr := list.root ;
+    begin
+        if index >= list.length then
+            report "Cannot retrieve item, index out of bounds"
+                severity warning ;
+            l := null ;
+        end if ;
+        for i in 1 to index loop
+            item := item.next_item ;
+        end loop ;
+        l := item.str ;
+    end procedure ;
+
+    procedure length(variable list : string_list; variable len : out natural) is
+    begin
+        len := list.length ;
+    end procedure ;
+
+    procedure sumlength(variable list : string_list ; rv : out natural) is
+        variable l      : line      := null ;
+        variable len    : natural   := 0 ;
+        variable count  : natural   := 0 ;
+    begin
+        length(list, len) ;
+        for i in 0 to len-1 loop
+            get(list, i, l) ;
+            count := count + l.all'length ;
+        end loop ;
+        rv := count ;
+    end procedure ;
+
+    procedure concatenate_list(variable parts : string_list ; variable rv : inout line) is
+        variable start  : positive  := 1 ;
+        variable stop   : positive  := 1 ;
+        variable l      : line      := null ;
+        variable len    : natural   := 0 ;
+    begin
+        sumlength(parts, len) ;
+        rv := new string(1 to len) ;
+        for i in 0 to parts.length-1 loop
+            get(parts, i, l) ;
+            stop := start + l.all'length - 1 ;
+            rv(start to stop) := l.all ;
+            start := stop + 1 ;
+        end loop ;
+    end procedure ;
+
+end package body ;
+
+-- Package: fmt_p
+-- Description
+--  A string formatting package that is based on the Python format specifier.
+--  See this website for some information:
+--
+--    https://realpython.com/python-formatted-output/#the-format_spec-component
+--
+--  Currently supported is:
+--
+--    :[fill][align][sign][width][.precision][class]
+--
+--  fill: Any character
+--    The character to fill any extra space when the string does not fit the
+--    requested width.
+--
+--  align: '<', '>', '^', '='
+--    <     Left alignment
+--    >     Right alignment
+--    ^     Center alignment
+--    =     Sign alignment (d, e, f, u classes only)
+--
+--  sign: '+'
+--    Ensures the sign is always printed for a number.
+--
+--  width: A number
+--    The minimum number of characters to write.
+--
+--  .precision: A point then a number.
+--    For the (e, f) classes, prints the number of points to the right of the decimal.
+--    For the t class, determines which timebase to utilize for conversion.
+--      Precision   Time Unit
+--      .0          1 second
+--      .3          1 millisecond
+--      .6          1 microsecond
+--      .9          1 nanosecond
+--      .12         1 picosecond
+--      .15         1 femtosecond
+--
+--  class: 'b', 'c', 'd', 'e', 'f', 'o', 's', 't', 'u', 'x'
+--      Character       Class
+--      b               Binary
+--      c               Character
+--      d               Signed integer
+--      e               Floating point (exp notation - i.e. 3.14159e+00)
+--      f               Floating point (fixed notation - i.e. 3.14159)
+--      o               Octal
+--      s               String
+--      t               Time value
+--      u               Unsigned integer
+--      x               Hexadecimal
+--    Note: Both lowercase and uppercase class values are accepetd.
+use std.textio.line ;
+use std.textio.side ;
+
+use std.textio.read ;
+use std.textio.bread ;
+use std.textio.hread ;
+use std.textio.oread ;
+
+use std.textio.write ;
+use std.textio.bwrite ;
+use std.textio.hwrite ;
+use std.textio.owrite ;
+
+use work.string_list_p.all ;
+
+package fmt_p is
+    ---------------------------------------------------------------------------
+    -- VHDL-2008 Generic Function
+    ---------------------------------------------------------------------------
+    ---- TODO: Generic f() function which utilizes the type'image to get the string and just pass to fstr()?
+    ---- Useful for custom enumerated types?
+    --function fstring
+    --    generic(type t; function to_string(x : t) return string is <>)
+    --    parameter(value : t ; sfmt : string := "s")
+    --    return string ;
+    --
+    --function fimage
+    --    generic(type t)
+    --    parameter(value : t ; sfmt : string := "s")
+    --    return string;
+
+    -- Format string building function using a string_list
+    procedure f(sfmt : string ; variable args : inout string_list ; variable l : inout line) ;
+    alias fmt is f[string, string_list, line] ;
+
+    -- Format string building function using up to 16 arguments
+    function f(sfmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string ;
+    alias fmt is f[string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string return string] ;
+
+    -- Single argument formatting
+    function f(sfmt : string ; value : bit) return string ;
+    function f(sfmt : string ; value : bit_vector) return string ;
+    function f(sfmt : string ; value : boolean) return string ;
+    function f(sfmt : string ; value : character) return string ;
+    function f(sfmt : string ; value : integer) return string ;
+    function f(sfmt : string ; value : real) return string ;
+    function f(sfmt : string ; value : time) return string ;
+
+    -- Functions to format standard types
+    -- NOTE: Aliases added for ambiguous types
+    function f(value : bit ; sfmt : string := "b") return string ;
+    alias fbit is f[bit, string return string] ;
+
+    function f(value : bit_vector ; sfmt : string := "b") return string ;
+    alias fbv is f[bit_vector, string return string] ;
+
+    function f(value : boolean ; sfmt : string := "s") return string ;
+
+    function f(value : character ; sfmt : string := "c") return string ;
+    alias fchar is f[character, string return string] ;
+
+    function f(value : integer ; sfmt : string := "d") return string ;
+    function f(value : real ; sfmt : string := "f") return string ;
+
+    function f(value : string ; sfmt : string := "s") return string ;
+    alias fstr is f[string, string return string] ;
+
+    function f(value : time ; sfmt : string := ".9t") return string ;
+
+end package ;
+
+package body fmt_p is
+
+    -- Internal private types
     -- Format Alignment
     --  LEFT        'example      '
     --  RIGHT       '      example'
@@ -55,6 +403,11 @@ package fmt is
     --  u   Unsigned integer
     --  x   Hexadecimal
     type class_t is (BINARY, CHAR, INT, FLOAT_EXP, FLOAT_FIXED, OCTAL, STR, TIMEVAL, UINT, HEX) ;
+
+    function f(sfmt : string ; value : align_t) return string ;
+    function f(sfmt : string ; value : class_t) return string ;
+    function f(value : align_t ; sfmt : string := "s") return string ;
+    function f(value : class_t ; sfmt : string := "s") return string ;
 
     -- [fill][align][sign][width][.precision][class]
     -- NOTE: # after sign might be good for prefixes (0b, 0o, 0x) and might be easy to implement.
@@ -78,6 +431,7 @@ package fmt is
         class       =>  STR
     ) ;
 
+    -- Private Helper functions
     function parse(sfmt : string ; default_class : class_t := STR) return fmt_spec_t ;
 
     -- Collapse align_t to be side (LEFT, RIGHT)
@@ -90,64 +444,6 @@ package fmt is
     ---------------------------------------------------------------------------
     -- VHDL-2008 Generic Function
     ---------------------------------------------------------------------------
-    ---- TODO: Generic f() function which utilizes the type'image to get the string and just pass to fstr()?
-    ---- Useful for custom enumerated types?
-    --function f
-    --    generic(type t; function to_string(x : t) return string is <>)
-    --    parameter(value : t ; sfmt : string := "s")
-    --    return string ;
-
-    -- Format string building procedure using a string_list
-    procedure f(sfmt : string ; variable args : inout string_list ; variable l : inout line) ;
-
-    -- Format string building function using up to 16 arguments
-    function f(sfmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string ;
-    alias fpr is f[string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string, string return string] ;
-
-    -- Single argument formatting
-    function f(sfmt : string ; value : align_t) return string ;
-    function f(sfmt : string ; value : bit) return string ;
-    function f(sfmt : string ; value : bit_vector) return string ;
-    function f(sfmt : string ; value : boolean) return string ;
-    function f(sfmt : string ; value : class_t) return string ;
-    function f(sfmt : string ; value : character) return string ;
-    function f(sfmt : string ; value : integer) return string ;
-    function f(sfmt : string ; value : real) return string ;
-    function f(sfmt : string ; value : time) return string ;
-
-    -- Functions to format standard types
-    -- NOTE: Aliases added for ambiguous types
-    function f(value : bit ; sfmt : string := "b") return string ;
-    alias fbit is f[bit, string return string] ;
-
-    function f(value : bit_vector ; sfmt : string := "b") return string ;
-    alias fbv is f[bit_vector, string return string] ;
-
-    function f(value : boolean ; sfmt : string := "s") return string ;
-
-    function f(value : character ; sfmt : string := "c") return string ;
-    alias fchar is f[character, string return string] ;
-
-    function f(value : integer ; sfmt : string := "d") return string ;
-
-    function f(value : real ; sfmt : string := "f") return string ;
-
-    function f(value : align_t ; sfmt : string := "s") return string ;
-
-    function f(value : class_t ; sfmt : string := "s") return string ;
-
-    function f(value : string ; sfmt : string := "s") return string ;
-    alias fstr is f[string, string return string] ;
-
-    function f(value : time ; sfmt : string := ".9t") return string ;
-
-end package ;
-
-package body fmt is
-
-    ---------------------------------------------------------------------------
-    -- VHDL-2008 Generic Function
-    ---------------------------------------------------------------------------
     --function f
     --    generic(type t; function to_string(x : t) return string is <>)
     --    parameter(value : t ; sfmt : string := "s")
@@ -155,6 +451,15 @@ package body fmt is
     --is
     --begin
     --    return fstr(to_string(value), sfmt) ;
+    --end function ;
+
+    --function f
+    --    generic(type t)
+    --    parameter(value : t ; sfmt : string := "s")
+    --    return string
+    --is
+    --begin
+    --    return fstr(t'image(value), sfmt) ;
     --end function ;
 
     function parse(sfmt : string ; default_class : class_t := STR) return fmt_spec_t is
@@ -262,7 +567,7 @@ package body fmt is
                                         fsm := FILL ;
 
                                     when others =>
-                                        report fpr("Invalid format specifier: {}", fstr(fn))
+                                        report fmt("Invalid format specifier: {}", fstr(fn))
                                             severity warning ;
                                         exit ;
                                 end case ;
@@ -401,14 +706,14 @@ package body fmt is
                             rv.class := HEX ;
                         when others =>
                             rv.class := BINARY ;
-                            report fpr("Unknown class: {} is not [bcdofsux] - defaulting to BINARY", f(fn(idx)))
+                            report fmt("Unknown class: {} is not [bcdofsux] - defaulting to BINARY", f(fn(idx)))
                                 severity warning ;
                     end case ;
                     idx := idx + 1 ;
                     fsm := EXTRA ;
 
                 when EXTRA =>
-                    report fpr("Extra characters in format specifier ignored : {}",  fstr(fn(idx to fn'length)))
+                    report fmt("Extra characters in format specifier ignored : {}",  fstr(fn(idx to fn'length)))
                         severity warning ;
                     exit ;
 
@@ -612,7 +917,7 @@ package body fmt is
             when 12 => unit := 1 ps ;
             when 15 => unit := 1 fs ;
             when others =>
-                report fpr("Time precision unknown: {}, using default", f(fmt_spec.precision))
+                report fmt("Time precision unknown: {}, using default", f(fmt_spec.precision))
                     severity warning ;
         end case ;
         write(l, value, to_side(fmt_spec.align), fmt_spec.width, unit) ;
@@ -815,88 +1120,6 @@ package body fmt is
         return l.all ;
     end function ;
 
-    procedure append(variable list : inout string_list ; s : string) is
-        variable l          : line                  := new string'(s) ;
-        variable new_item   : string_list_item_ptr  := new string_list_item ;
-        variable item       : string_list_item_ptr  := list.root ;
-    begin
-        new_item.str := l ;
-        new_item.next_item := null ;
-        if list.length = 0 then
-            list.root := new_item ;
-        else
-            while item.next_item /= null loop
-                item := item.next_item ;
-            end loop ;
-            item.next_item := new_item ;
-        end if ;
-        list.length := list.length + 1 ;
-    end procedure ;
-
-    procedure clear(variable list : inout string_list) is
-        variable item       : string_list_item_ptr := list.root ;
-        variable next_item  : string_list_item_ptr := null ;
-    begin
-        if item /= null then
-            next_item := item.next_item ;
-        end if ;
-        while item /= null loop
-            next_item := item.next_item ;
-            deallocate(item) ;
-            item := next_item ;
-        end loop ;
-        list.root := null ;
-        list.length := 0 ;
-    end procedure ;
-
-    procedure get(variable list : in string_list ; index : integer ; variable l : out line) is
-        variable item : string_list_item_ptr := list.root ;
-    begin
-        if index >= list.length then
-            report "Cannot retrieve item, index out of bounds"
-                severity warning ;
-            l := null ;
-        end if ;
-        for i in 1 to index loop
-            item := item.next_item ;
-        end loop ;
-        l := item.str ;
-    end procedure ;
-
-    procedure length(variable list : string_list; variable len : out natural) is
-    begin
-        len := list.length ;
-    end procedure ;
-
-    procedure sumlength(variable list : string_list ; rv : out natural) is
-        variable l      : line      := null ;
-        variable len    : natural   := 0 ;
-        variable count  : natural   := 0 ;
-    begin
-        length(list, len) ;
-        for i in 0 to len-1 loop
-            get(list, i, l) ;
-            count := count + l.all'length ;
-        end loop ;
-        rv := count ;
-    end procedure ;
-
-    procedure concatenate_list(variable parts : string_list ; variable rv : inout line) is
-        variable start  : positive  := 1 ;
-        variable stop   : positive  := 1 ;
-        variable l      : line      := null ;
-        variable len    : natural   := 0 ;
-    begin
-        sumlength(parts, len) ;
-        rv := new string(1 to len) ;
-        for i in 0 to parts.length-1 loop
-            get(parts, i, l) ;
-            stop := start + l.all'length - 1 ;
-            rv(start to stop) := l.all ;
-            start := stop + 1 ;
-        end loop ;
-    end procedure ;
-
     procedure reformat(variable l : inout line ; sfmt : in string) is
         type bv_ptr is access bit_vector ;
         constant fmt_spec       : fmt_spec_t := parse(sfmt) ;
@@ -953,7 +1176,7 @@ package body fmt is
 
                 -- Never parsed it so warn
                 if good = false then
-                    report fpr("Could not parse '{}' as BINARY", strl.all)
+                    report fmt("Could not parse '{}' as BINARY", strl.all)
                     severity warning ;
                 end if ;
 
@@ -983,7 +1206,7 @@ package body fmt is
 
                 -- Never parsed it so warn
                 if good = false then
-                    report fpr("Could not parse '{}' as OCTAL or HEX", strl.all)
+                    report fmt("Could not parse '{}' as OCTAL or HEX", strl.all)
                     severity warning ;
                 end if ;
 
@@ -998,7 +1221,7 @@ package body fmt is
                 -- Try integer
                 read(strl, integer_arg, good) ;
                 if good = false then
-                    report fpr("Invalid integer argument: {}", strl.all)
+                    report fmt("Invalid integer argument: {}", strl.all)
                         severity warning ;
                 end if ;
                 if sfmt'length > 0 then
@@ -1012,7 +1235,7 @@ package body fmt is
             when FLOAT_EXP|FLOAT_FIXED =>
                 read(strl, real_arg, good) ;
                 if good = false then
-                    report fpr("Invalid real argument: {}", strl.all)
+                    report fmt("Invalid real argument: {}", strl.all)
                         severity warning ;
                 end if ;
                 if sfmt'length > 0 then
@@ -1024,7 +1247,7 @@ package body fmt is
             when TIMEVAL =>
                 read(strl, time_arg, good) ;
                 if good = false then
-                    report fpr("Invalid time argument: {}", strl.all)
+                    report fmt("Invalid time argument: {}", strl.all)
                         severity warning ;
                 end if ;
                 if sfmt'length > 0 then
@@ -1097,10 +1320,10 @@ package body fmt is
                             -- Check the length
                             length(args, len) ;
                             assert argnum <= len
-                                report fpr("Too many arguments given the list: {} > {}", f(argnum), f(len))
+                                report fmt("Too many arguments given the list: {} > {}", f(argnum), f(len))
                                     severity warning ;
                             if argnum_used = true then
-                                report fpr("Cannot mix argnum usage in format string: {} @ {}", fn, f(i)) ;
+                                report fmt("Cannot mix argnum usage in format string: {} @ {}", fn, f(i)) ;
                             end if ;
                             if argnum >= len then
                                 argnum_limited := argnum_limited + 1 ;
@@ -1151,7 +1374,7 @@ package body fmt is
                             fsm := COPY_STRING ;
 
                         when others =>
-                            report fpr("Parsing error, RBRACE without corresponding LBRACE or RBRACE at {}: {}", f(i-1), fstr(fn))
+                            report fmt("Parsing error, RBRACE without corresponding LBRACE or RBRACE at {}: {}", f(i-1), fstr(fn))
                                 severity warning ;
                     end case ;
 
@@ -1165,7 +1388,7 @@ package body fmt is
                             length(args, len) ;
 
                             assert argnum < len
-                                report fpr("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
+                                report fmt("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
                                 severity warning ;
 
                             if argnum >= len then
@@ -1194,7 +1417,7 @@ package body fmt is
                             length(args, len) ;
 
                             assert argnum < len
-                                report fpr("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
+                                report fmt("Invalid argnum ({}) - total arguments: {}", f(argnum), f(len))
                                 severity warning ;
 
                             if argnum >= len then
@@ -1207,7 +1430,7 @@ package body fmt is
                             fmt_stop := i + 1 ;
 
                         when others =>
-                            report fpr("Invalid argument specifier ({}) at position {}", f(fn(i)), f(i))
+                            report fmt("Invalid argument specifier ({}) at position {}", f(fn(i)), f(i))
                                 severity warning ;
 
                     end case ;
@@ -1219,7 +1442,7 @@ package body fmt is
                             length(args, len) ;
 
                             assert argnum <= len
-                                report fpr("Too many arguments given the list: {} > {}", f(argnum), f(len))
+                                report fmt("Too many arguments given the list: {} > {}", f(argnum), f(len))
                                     severity warning ;
 
                             -- Keep track of the number of times we limit arguments
@@ -1270,10 +1493,27 @@ package body fmt is
         if argnum_used = false then
             length(args, len) ;
             if argnum /= len then
-                report fpr("Extra arguments passed into format expression - passed {}, but used {}", f(len), f(argnum))
+                report fmt("Extra arguments passed into format expression - passed {}, but used {}", f(len), f(argnum))
                     severity warning ;
             end if ;
         end if ;
+    end procedure ;
+
+    procedure f(sfmt : string ; variable args : inout string_list ; variable l : inout line) is
+        alias fn        : string(1 to sfmt'length) is sfmt ;
+        variable parts  : string_list ;
+    begin
+        -- Zero length format string short circuit
+        if fn'length = 0 then
+            l := new string'("") ;
+            return ;
+        end if ;
+
+        -- Create parts to concatenate removing the formatting
+        create_parts(fn, parts, args) ;
+
+        -- Return the concatenated parts
+        concatenate_list(parts, l) ;
     end procedure ;
 
     function f(sfmt : string ; a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15 : in string := "") return string is
@@ -1328,67 +1568,50 @@ package body fmt is
         return l.all ;
     end function ;
 
-    procedure f(sfmt : string ; variable args : inout string_list ; variable l : inout line) is
-        alias fn        : string(1 to sfmt'length) is sfmt ;
-        variable parts  : string_list ;
-    begin
-        -- Zero length format string short circuit
-        if fn'length = 0 then
-            l := new string'("") ;
-            return ;
-        end if ;
-
-        -- Create parts to concatenate removing the formatting
-        create_parts(fn, parts, args) ;
-
-        -- Return the concatenated parts
-        concatenate_list(parts, l) ;
-    end procedure ;
-
     -- Single argument formatters
     function f(sfmt : string ; value : align_t) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : bit) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : bit_vector) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : boolean) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : character) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : class_t) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : integer) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : real) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
     function f(sfmt : string ; value : time) return string is
     begin
-        return fpr(sfmt, f(value)) ;
+        return fmt(sfmt, f(value)) ;
     end function ;
 
 end package body ;

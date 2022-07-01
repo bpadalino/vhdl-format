@@ -4,7 +4,8 @@ library ieee ;
     use ieee.std_logic_1164.all ;
 
 library work ;
-    use work.fmt.all ;
+    use work.fmt_p.all ;
+    use work.string_list_p.all ;
 
 entity fmt_test is
   generic (
@@ -101,7 +102,7 @@ begin
         variable failed     :   natural := 0 ;
 
         variable cmd        :   line ;
-        variable fmt        :   line ;
+        variable sfmt       :   line ;
         variable result     :   line ;
         variable gold       :   line ;
         variable args       :   lines_t(1 to 16) := (others => null) ;
@@ -131,7 +132,7 @@ begin
             -- Calculate arguments given the number of lines we split
             num_args := len - 1 - 1 - 1 ;
             if num_args < 0 then
-                report fpr("Invalid test at line {}: {}", f(lineno), l.all)
+                report fmt("Invalid test at line {}: {}", f(lineno), l.all)
                     severity warning ;
                 next ;
             end if ;
@@ -140,7 +141,7 @@ begin
             get(lines, 0, cmd) ;
 
             -- Populate Format String
-            get(lines, 1, fmt) ;
+            get(lines, 1, sfmt) ;
 
             -- Clear any old arguments
             args := (others => null) ;
@@ -164,11 +165,11 @@ begin
             if cmd.all = "fb" then
                 read(args(1), bit_arg, good) ;
                 if good = false then
-                    report fpr("Invalid bit argument: {}", args(1).all)
+                    report fmt("Invalid bit argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(fmt.all, bit_arg)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(sfmt.all, bit_arg)) ;
                 else
                     report "fb command requires a format string, none given"
                         severity warning ;
@@ -182,11 +183,11 @@ begin
                 bv_ptr := new bit_vector(0 to args(1)'length-1) ;
                 bread(args(1), bv_ptr.all, good) ;
                 if good = false then
-                    report fpr("Invalid bit_vector argument: {}", args(1).all)
+                    report fmt("Invalid bit_vector argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(fmt.all, bv_ptr.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(sfmt.all, bv_ptr.all)) ;
                 else
                     report "fbv command requires a format string, none given"
                         severity warning ;
@@ -199,11 +200,11 @@ begin
             elsif cmd.all = "fbit" then
                 read(args(1), bit_arg, good) ;
                 if good = false then
-                    report fpr("Invalid bit argument: {}", args(1).all)
+                    report fmt("Invalid bit argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(bit_arg, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(bit_arg, sfmt.all)) ;
                 else
                     result := new string'(f(bit_arg)) ;
                 end if ;
@@ -215,11 +216,11 @@ begin
                 bv_ptr := new bit_vector(0 to l'length-1) ;
                 read(args(1), bv_ptr.all, good) ;
                 if good = false then
-                    report fpr("Invalid bit_vector argument: {}", args(1).all)
+                    report fmt("Invalid bit_vector argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(bv_ptr.all, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(bv_ptr.all, sfmt.all)) ;
                 else
                     result := new string'(f(bv_ptr.all)) ;
                 end if ;
@@ -230,11 +231,11 @@ begin
             elsif cmd.all = "fbool" then
                 read(args(1), bool_arg, good) ;
                 if good = false then
-                    report fpr("Invalid bool argument: {}", args(1).all)
+                    report fmt("Invalid bool argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(fmt.all, bool_arg)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(sfmt.all, bool_arg)) ;
                 else
                     report "fbool command requires a format string, none given"
                         severity warning ;
@@ -247,11 +248,11 @@ begin
             elsif cmd.all = "fboolean" then
                 read(args(1), bool_arg, good) ;
                 if good = false then
-                    report fpr("Invalid bool argument: {}", args(1).all)
+                    report fmt("Invalid bool argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(bool_arg, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(bool_arg, sfmt.all)) ;
                 else
                     result := new string'(f(bool_arg)) ;
                 end if ;
@@ -262,11 +263,11 @@ begin
             elsif cmd.all = "fchar" then
                 read(args(1), char_arg, good) ;
                 if good = false then
-                    report fpr("Invalid character argument: {}", args(1).all)
+                    report fmt("Invalid character argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(char_arg, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(char_arg, sfmt.all)) ;
                 else
                     result := new string'(f(char_arg)) ;
                 end if ;
@@ -277,11 +278,11 @@ begin
             elsif cmd.all = "fi" then
                 read(args(1), int_arg, good) ;
                 if good = false then
-                    report fpr("Invalid integer argument: {}", args(1).all)
+                    report fmt("Invalid integer argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(fmt.all, int_arg)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(sfmt.all, int_arg)) ;
                 else
                     report "fi command requires a format string, none given"
                         severity warning ;
@@ -294,11 +295,11 @@ begin
             elsif cmd.all = "fr" then
                 read(args(1), real_arg, good) ;
                 if good = false then
-                    report fpr("Invalid real argument: {}", args(1).all)
+                    report fmt("Invalid real argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(fmt.all, real_arg)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(sfmt.all, real_arg)) ;
                 else
                     report "fr command requires a format string, none given"
                         severity warning ;
@@ -311,11 +312,11 @@ begin
             elsif cmd.all = "ft" then
                 read(args(1), time_arg, good) ;
                 if good = false then
-                    report fpr("Invalid time argument: {}", args(1).all)
+                    report fmt("Invalid time argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(fmt.all, time_arg)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(sfmt.all, time_arg)) ;
                 else
                     report "ft command requires a format string, none given"
                         severity warning ;
@@ -328,48 +329,48 @@ begin
             elsif cmd.all = "fint" then
                 read(args(1), int_arg, good) ;
                 if good = false then
-                    report fpr("Invalid integer argument: {}", args(1).all)
+                    report fmt("Invalid integer argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(int_arg, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(int_arg, sfmt.all)) ;
                 else
                     result := new string'(f(int_arg)) ;
                 end if ;
 
             -------------------------------------------------------------------
-            -- fpr
+            -- fmt
             -------------------------------------------------------------------
-            elsif cmd.all = "fpr" then
+            elsif cmd.all = "fmt" then
                 case num_args is
                     when  0 =>
-                        result := new string'(fpr(fmt.all)) ;
+                        result := new string'(fmt(sfmt.all)) ;
                     when  1 =>
-                        result := new string'(fpr(fmt.all, args(1).all)) ;
+                        result := new string'(fmt(sfmt.all, args(1).all)) ;
                     when  2 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all)) ;
                     when  3 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all)) ;
                     when  4 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
                                                   args(4).all)) ;
                     when  5 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
                                                   args(4).all,
                                                   args(5).all)) ;
                     when  6 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -377,7 +378,7 @@ begin
                                                   args(5).all,
                                                   args(6).all)) ;
                     when  7 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -386,7 +387,7 @@ begin
                                                   args(6).all,
                                                   args(7).all)) ;
                     when  8 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -396,7 +397,7 @@ begin
                                                   args(7).all,
                                                   args(8).all)) ;
                     when  9 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -407,7 +408,7 @@ begin
                                                   args(8).all,
                                                   args(9).all)) ;
                     when 10 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -419,7 +420,7 @@ begin
                                                   args(9).all,
                                                   args(10).all)) ;
                     when 11 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -432,7 +433,7 @@ begin
                                                   args(10).all,
                                                   args(11).all)) ;
                     when 12 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -446,7 +447,7 @@ begin
                                                   args(11).all,
                                                   args(12).all)) ;
                     when 13 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -461,7 +462,7 @@ begin
                                                   args(12).all,
                                                   args(13).all)) ;
                     when 14 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -477,7 +478,7 @@ begin
                                                   args(13).all,
                                                   args(14).all)) ;
                     when 15 =>
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -495,10 +496,10 @@ begin
                                                   args(15).all)) ;
                     when others =>
                         if num_args > 16 then
-                            report fpr("Too many arguments on line {}: {} > 16, trimming to 16", f(lineno), f(num_args))
+                            report fmt("Too many arguments on line {}: {} > 16, trimming to 16", f(lineno), f(num_args))
                                 severity warning ;
                         end if ;
-                        result := new string'(fpr(fmt.all,
+                        result := new string'(fmt(sfmt.all,
                                                   args(1).all,
                                                   args(2).all,
                                                   args(3).all,
@@ -531,7 +532,7 @@ begin
                 end loop ;
 
                 -- Format
-                f(fmt.all, args_list, result) ;
+                f(sfmt.all, args_list, result) ;
 
             -------------------------------------------------------------------
             -- freal
@@ -539,11 +540,11 @@ begin
             elsif cmd.all = "freal" then
                 read(args(1), real_arg, good) ;
                 if good = false then
-                    report fpr("Invalid real argument: {}", args(1).all)
+                    report fmt("Invalid real argument: {}", args(1).all)
                         severity warning ;
                 end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(real_arg, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(real_arg, sfmt.all)) ;
                 else
                     result := new string'(f(real_arg)) ;
                 end if ;
@@ -552,8 +553,8 @@ begin
             -- fstr
             -------------------------------------------------------------------
             elsif cmd.all = "fstr" then
-                if fmt'length > 0 then
-                    result := new string'(fstr(args(1).all, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(fstr(args(1).all, sfmt.all)) ;
                 else
                     result := new string'(fstr(args(1).all)) ;
                 end if ;
@@ -564,11 +565,11 @@ begin
             elsif cmd.all = "ftime" then
                 read(args(1), time_arg, good) ;
                 if good = false then
-                    report fpr("Invalid time argument: {}", args(1).all)
+                    report fmt("Invalid time argument: {}", args(1).all)
                         severity warning ;
                     end if ;
-                if fmt'length > 0 then
-                    result := new string'(f(time_arg, fmt.all)) ;
+                if sfmt'length > 0 then
+                    result := new string'(f(time_arg, sfmt.all)) ;
                 else
                     result := new string'(f(time_arg)) ;
                 end if ;
@@ -577,7 +578,7 @@ begin
             -- Unknown command
             -------------------------------------------------------------------
             else
-                report fpr("Unknown command on line {}: {}", f(lineno), cmd.all) ;
+                report fmt("Unknown command on line {}: {}", f(lineno), cmd.all) ;
             end if ;
 
             -- Increment test count
@@ -608,15 +609,15 @@ begin
         end loop ;
 
         -- Final report
-        write(output, fpr("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}" & LF, f(tests), f(tests-failed), f(failed))) ;
+        write(output, fmt("Tests: {:>8d}   Passed: {:>8d}   Failed: {:>8d}" & LF, f(tests), f(tests-failed), f(failed))) ;
 
         -- Close the test file
         file_close(fin) ;
 
         -- VHDL-2008 required with generic subprograms
-        --report fpr("state: {}", f(state, "->20s")) ;
+        --report fmt("state: {}", f(state, "->20s")) ;
         -- Alternative that doesn't require generic subprograms
-        --report fpr("state: {}", fstr(state_t'image(state), "->20s")) ;
+        --report fmt("state: {}", fstr(state_t'image(state), "->20s")) ;
 
         -- Done
         std.env.stop ;
