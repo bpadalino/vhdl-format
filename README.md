@@ -11,7 +11,7 @@ A typical string building line might look like:
 ```
 
 ## Solution
-VHDL has operator overloading which includes the return tyle, so we can emulate
+VHDL has operator overloading which includes the return style, so we can emulate
 the style of f-strings in VHDL.
 
 ```vhdl
@@ -76,7 +76,7 @@ alias fstr is f[string, string return string] ;
 function f(value : time ; sfmt : string := ".9t") return string ;
 ```
 
-These are all included in a single file called 'fmt.vhd'.
+These are all included in a single file: [`fmt.vhd`](https://github.com/bpadalino/vhdl-format/blob/main/fmt.vhd).
 
 ## Format Specification
 
@@ -186,6 +186,7 @@ file.
 * [ ] Add `signed` and `unsigned` `f()`
 * [ ] Add `sfixed` and `ufixed` `f()`
 * [ ] Generic `f()` for easier customization with default `'image` or `to_string()` conversions
+* [ ] Add the `#` option for printing `0b`, `0o`, or `0x` before the printed number
 
 ## License
 The package is provided under the Unlicense so feel free to do whatever you like with it.
