@@ -31,9 +31,9 @@ In this example, we are right justifying a signed decimal number with a width of
 and creating a string from the value `r` with 12 bits of precision after the decimal
 point.
 
-## `fmt_p` package
+## `fmt` package
 
-The `fmt_p` package defines the following functions for use.
+The `fmt` package defines the following functions for use.
 
 ```vhdl
 -- Format string building function using a string_list

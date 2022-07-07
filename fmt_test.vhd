@@ -4,8 +4,8 @@ library ieee ;
     use ieee.std_logic_1164.all ;
 
 library work ;
-    use work.fmt_p.all ;
-    use work.string_list_p.all ;
+    use work.fmt.all ;
+    use work.string_list.all ;
 
 entity fmt_test is
   generic (

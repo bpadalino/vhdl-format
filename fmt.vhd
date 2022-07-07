@@ -1,9 +1,9 @@
--- Package: colors_p
+-- Package: colors
 -- Description
 --  A package containing the strings for producing ANSI colored output on a
 --  terminal.
 
-package colors_p is
+package colors is
     type colors_t is record
         BLACK   :   string ;
         RED     :   string ;
@@ -137,7 +137,7 @@ package colors_p is
 
 end package ;
 
--- Package: string_list_p
+-- Package: string_list
 -- Description
 --  A string_list is a dynamic array of strings which can efficiently be passed
 --  between procedures such that the string does not need to be the same length.
@@ -147,7 +147,7 @@ end package ;
 --  The only extra procedures to write are then sumlength and concatenate_list.
 use std.textio.line ;
 
-package string_list_p is
+package string_list is
 
     type string_list ;
     type string_list_item ;
@@ -173,7 +173,7 @@ package string_list_p is
 
 end package ;
 
-package body string_list_p is
+package body string_list is
 
     procedure append(variable list : inout string_list ; s : string) is
         variable l          : line                  := new string'(s) ;
@@ -259,7 +259,7 @@ package body string_list_p is
 
 end package body ;
 
--- Package: fmt_p
+-- Package: fmt
 -- Description
 --  A string formatting package that is based on the Python format specifier.
 --  See this website for some information:
@@ -323,9 +323,9 @@ use std.textio.bwrite ;
 use std.textio.hwrite ;
 use std.textio.owrite ;
 
-use work.string_list_p.all ;
+use work.string_list.all ;
 
-package fmt_p is
+package fmt is
     ---------------------------------------------------------------------------
     -- VHDL-2008 Generic Function
     ---------------------------------------------------------------------------
@@ -381,7 +381,7 @@ package fmt_p is
 
 end package ;
 
-package body fmt_p is
+package body fmt is
 
     -- Internal private types
     -- Format Alignment

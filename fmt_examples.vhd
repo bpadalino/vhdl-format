@@ -1,14 +1,14 @@
 use std.textio.write ;
 use std.textio.output ;
 
-use work.fmt_p.f ;
-use work.fmt_p.fbit ;
-use work.fmt_p.fbv ;
-use work.fmt_p.fchar ;
-use work.fmt_p.fmt ;
-use work.fmt_p.fstr ;
+use work.fmt.f ;
+use work.fmt.fbit ;
+use work.fmt.fbv ;
+use work.fmt.fchar ;
+use work.fmt.fmt ;
+use work.fmt.fstr ;
 
-use work.colors_p.ansi ;
+use work.colors.ansi ;
 
 library ieee ;
 use ieee.math_real.MATH_PI ;
