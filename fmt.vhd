@@ -325,6 +325,29 @@ use std.textio.owrite ;
 
 use work.string_list.all ;
 
+library ieee ;
+use ieee.std_logic_1164.std_logic ;
+use ieee.std_logic_1164.std_logic_vector ;
+use ieee.std_logic_1164.hwrite ;
+use ieee.std_logic_1164.owrite ;
+use ieee.std_logic_1164.bwrite ;
+use ieee.std_logic_1164.write ;
+
+use ieee.numeric_std.signed ;
+use ieee.numeric_std.unsigned ;
+use ieee.numeric_std.to_integer ;
+use ieee.numeric_std.hwrite ;
+use ieee.numeric_std.owrite ;
+use ieee.numeric_std.bwrite ;
+
+use ieee.fixed_pkg.sfixed ;
+use ieee.fixed_pkg.ufixed ;
+use ieee.fixed_pkg.hwrite ;
+use ieee.fixed_pkg.owrite ;
+use ieee.fixed_pkg.bwrite ;
+use ieee.fixed_pkg.to_real ;
+use ieee.fixed_pkg.to_slv ;
+
 package fmt is
     ---------------------------------------------------------------------------
     -- VHDL-2008 Generic Function
@@ -379,9 +402,34 @@ package fmt is
 
     function f(value : time ; sfmt : string := ".9t") return string ;
 
+    -- Functions to format fixed point types
+    function f(value : sfixed ; sfmt : string := "f") return string ;
+    function f(value : ufixed ; sfmt : string := "f") return string ;
+
+    function f(value : signed ; sfmt : string := "d") return string ;
+    function f(value : unsigned ; sfmt : string := "d") return string ;
+
+    function f(value : std_logic ; sfmt : string := "b") return string ;
+    function f(value : std_logic_vector ; sfmt : string := "b") return string ;
+
+    -- Printing to output
+    procedure p(x : string) ;
+    alias print is p[string];
+
 end package ;
 
 package body fmt is
+
+    use std.textio.write ;
+    use std.textio.writeline ;
+    use std.textio.output ;
+
+    procedure p(x : string) is
+        variable l : line ;
+    begin
+        write(l, x) ;
+        writeline(output, l) ;
+    end procedure ;
 
     -- Internal private types
     -- Format Alignment
@@ -988,6 +1036,214 @@ package body fmt is
         --            severity warning ;
         --end case ;
         return l.all ;
+    end function ;
+
+    function f(value : sfixed ; sfmt : string := "f") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, FLOAT_FIXED) ;
+        variable l          : line ;
+    begin
+        case fmt_spec.class is
+            when INT =>
+                -- Casting:
+                --  sfixed -> std_logic_vector
+                --  std_logic_vector -> signed
+                --  signed -> integer
+                -- format integer
+                return f(to_integer(signed(to_slv(value))), sfmt) ;
+
+            when FLOAT_EXP|FLOAT_FIXED =>
+                -- Casting:
+                --  sfixed -> real
+                -- format real
+                return f(to_real(value), sfmt) ;
+
+            when OCTAL =>
+                -- Casting:
+                --  sfixed -> formatted string
+                owrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when HEX =>
+                -- Casting
+                --  sfixed -> formatted string using hwrite
+                hwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when BINARY =>
+                -- Casting
+                --  sfixed -> formatted string using bwrite
+                bwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when others =>
+                report "Could not apply format to sfixed" severity failure ;
+        end case ;
+    end function ;
+
+    function f(value : ufixed ; sfmt : string := "f") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, FLOAT_FIXED) ;
+        variable l          : line ;
+    begin
+        case fmt_spec.class is
+            when INT =>
+                -- Casting:
+                --  ufixed -> std_logic_vector
+                --  std_logic_vector -> unsigned
+                --  signed -> integer
+                -- format integer
+                return f(to_integer(unsigned(to_slv(value))), sfmt) ;
+
+            when FLOAT_EXP|FLOAT_FIXED =>
+                -- Casting:
+                --  ufixed -> real
+                -- format real
+                return f(to_real(value), sfmt) ;
+
+            when OCTAL =>
+                -- Casting:
+                --  ufixed -> formatted string
+                owrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when HEX =>
+                -- Casting
+                --  ufixed -> formatted string using hwrite
+                hwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when BINARY =>
+                -- Casting
+                --  ufixed -> formatted string using bwrite
+                bwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when others =>
+                report "Could not apply format to ufixed:" & class_t'image(fmt_spec.class) severity failure ;
+        end case ;
+    end function ;
+
+    function f(value : signed ; sfmt : string := "d") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, FLOAT_FIXED) ;
+        variable l          : line ;
+    begin
+        case fmt_spec.class is
+            when INT =>
+                -- Casting:
+                --  signed -> integer
+                -- format integer
+                return f(to_integer(value), sfmt) ;
+
+            when OCTAL =>
+                -- Casting:
+                --  signed -> formatted string
+                owrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when HEX =>
+                -- Casting
+                --  signed -> formatted string using hwrite
+                hwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when BINARY =>
+                -- Casting
+                --  signed -> formatted string using bwrite
+                bwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when others =>
+                report "Could not apply format to signed" & class_t'image(fmt_spec.class) severity failure ;
+        end case ;
+    end function ;
+
+    function f(value : unsigned ; sfmt : string := "d") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, FLOAT_FIXED) ;
+        variable l          : line ;
+    begin
+        case fmt_spec.class is
+            when INT =>
+                -- Casting:
+                --  unsigned -> integer
+                -- format integer
+                return f(to_integer(value), sfmt) ;
+
+            when OCTAL =>
+                -- Casting:
+                --  unsigned -> formatted string
+                owrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when HEX =>
+                -- Casting
+                --  unsigned -> formatted string using hwrite
+                hwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when BINARY =>
+                -- Casting
+                --  unsigned -> formatted string using bwrite
+                bwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when others =>
+                report "Could not apply format to unsigned" & class_t'image(fmt_spec.class) severity failure ;
+        end case ;
+    end function ;
+
+    function f(value : std_logic ; sfmt : string := "b") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, FLOAT_FIXED) ;
+        variable l          : line ;
+    begin
+        case fmt_spec.class is
+            when BINARY =>
+                write(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when others =>
+                report "Could not apply format to std_logic: " & class_t'image(fmt_spec.class) severity failure ;
+        end case ;
+    end function ;
+
+    function f(value : std_logic_vector ; sfmt : string := "b") return string is
+        variable fmt_spec   : fmt_spec_t    := parse(sfmt, FLOAT_FIXED) ;
+        variable l          : line ;
+    begin
+        case fmt_spec.class is
+            when INT =>
+                -- Casting:
+                --  std_logic_vector -> signed
+                --  unsigned -> integer
+                -- format integer
+                return f(to_integer(signed(value)), sfmt) ;
+
+            when UINT =>
+                -- Casting:
+                --  std_logic_vector -> unsigned
+                --  unsigned -> integer
+                -- format integer
+                return f(to_integer(unsigned(value)), sfmt) ;
+
+            when OCTAL =>
+                -- Casting:
+                --  std_logic_vector -> formatted string
+                owrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when HEX =>
+                -- Casting
+                --  std_logic_vector -> formatted string using hwrite
+                hwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when BINARY =>
+                -- Casting
+                --  std_logic_vector -> formatted string using bwrite
+                bwrite(l, value, to_side(fmt_spec.align), fmt_spec.width) ;
+                return l.all ;
+
+            when others =>
+                report "Could not apply format to signed" & class_t'image(fmt_spec.class) severity failure ;
+        end case ;
     end function ;
 
     function f(value : real ; sfmt : string := "f") return string is
